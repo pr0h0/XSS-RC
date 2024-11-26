@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('partials/head', {title:locals.title}) %>
+
+<body class="w-full h-screen flex flex-col">
+  <div class="flex flex-row flex-1 bg-indigo-100 h-screen">
+    <%- include('partials/sidebar') %>
+    <div class="flex-1 flex bg-indigo-100">
+      <div class="flex-1 flex flex-col p-4 overflow-auto">
+        <h1 class="h-[72px] bg-white text-4xl p-4 text-center mb-4">Sessions</h1>
+        <table class="w-full bg-white">
+          <thead class="border-b border-solid border-black">
+            <tr>
+              <th class="p-4 w-1/12">ID</th>
+              <th class="p-4 w-1/12">Session ID</th>
+              <th class="p-4 w-1/12">Session Status</th>
+              <th class="p-4 w-1/12">Session Name</th>
+              <th class="p-4 w-1/12">Session Description</th>
+              <th class="p-4 w-1/12">Session Time</th>
+              <th class="p-4 w-1/12">Script ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% sessions.forEach(function(session) { %>
+            <tr class="border-b border-solid border-gray-400">
+              <td class="text-center"><%= session.id %></td>
+              <td class="text-center"><%= session.sessionId %></td>
+              <td class="text-center <%= session.status === 'Active' ? "bg-green-500" : "bg-gray-500"%>"><%= session.status %></td>
+              <td class="text-center"><%= session.name %></td>
+              <td class="text-center"><%= session.description %></td>
+              <td class="text-center"><%- session.time.slice(0,-5).split("T").join("<br/>") %></td>
+              <td class="text-center"><%= session.scriptId %></td>
+            </tr>
+            <tr class="border-b border-solid border-black opacity-50">
+              <td colspan="5" class="text-center border-r border-gray-400"><%= session.ua %></td>
+              <td colspan="2" class="text-center"><%= session.ip %></td>
+            </tr>
+            <% }) %>
+            <% if (!sessions.length) { %>
+            <tr>
+              <td class="text-center p-4 text-xl" colspan="5">No sessions found</td>
+            </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <%- include('partials/footer') %>
+</body>
+
+</html>

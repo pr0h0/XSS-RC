@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('partials/head', {title:locals.title}) %>
+
+<body class="w-full h-screen flex flex-col">
+  <div class="flex flex-row flex-1 bg-indigo-100 h-screen">
+    <%- include('partials/sidebar') %>
+    <div class="flex-1 flex items-center justify-center bg-indigo-100">
+      <div class="w-1/2 bg-white p-8 rounded-lg shadow-lg flex flex-col gap-4 items-center">
+        <h1 class="text-2xl font-bold text-center">XSS Remote Control by <a href="https://github.com/pr0h0" class="underline">@pr0h0</a></h1>
+        <p class="text-center">Example page to test script</p>
+        <p class="text-center">Keep this tab opened and connect on sessions page</p>
+        <p class="text-center">To test Post-Exploitation using XSS - RC</p>
+        <p class="text-center">
+          Reflected query (vulnerable to XSS)
+          <br />
+          <%- Object.entries(locals.query).join("<br />") %>
+        </p>
+        <p class="text-center font-bold">Script ID: <%= locals.script.id %></p>
+        <p class="text-center font-bold">Script Name: <%= locals.script.name %></p>
+        <p class="text-center font-bold">Script Site: <%= locals.script.site %></p>
+        <div class="flex justify-center mt-4">
+          <button onclick="handleGoBackClick(this)" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded" data-href="/scripts">Go back to scripts</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <%- include('partials/footer') %>
+  <script src="/scripts/<%= locals.script.id %>/script.js" type="module" id="script-rc" data-script-id="4"></script>
+  <script>
+    function handleGoBackClick(button) {
+      const url = button.getAttribute("data-href")
+      if (window.opener && window.opener.location?.href.includes("/scripts")) {
+        window.close();
+      } else {
+        window.location.href = url
+      }
+    }
+  </script>
+</body>
+
+</html>

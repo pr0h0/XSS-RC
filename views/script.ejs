@@ -1,0 +1,58 @@
+const currScript = /** @type {HTMLScriptElement} */ (
+  /** @type {*} */ document.querySelector("#script-rc")
+);
+if (!currScript) throw new Error("No script element found");
+
+const scriptUrl = new URL(currScript.src);
+const protocol = scriptUrl.protocol;
+const host = scriptUrl.host;
+const scriptId = scriptUrl.pathname
+  .split("/")
+  .find((x) => (Number.isNaN(Number(x)) ? false : Number(x)));
+const socketIoScript = document.createElement("script");
+
+socketIoScript.src = `${protocol}//${host}/socket.io/socket.io.js`;
+document.head.appendChild(socketIoScript);
+socketIoScript.onload = startTheScript;
+
+function startTheScript() {
+  // @ts-ignore
+  const socket = io(`${protocol}//${host}`);
+
+  const state = {};
+
+  state.sessionId = localStorage.getItem("sessionId") ?? "new";
+  state.scriptId = scriptId;
+
+  socket.on("connect", () => {
+    console.log("Connected to the server");
+    if (state.sessionId) {
+      socket.emit("join", {
+        scriptId: state.scriptId,
+        sessionId: state.sessionId,
+      });
+      console.log("Joining session", state.sessionId);
+    } else {
+      socket.emit("join", "new");
+    }
+  });
+
+  socket.on("session", (data) => {
+    console.log("session", data);
+    if (state.sessionId === "new" && data.sessionId) {
+      localStorage.setItem("sessionId", data.sessionId);
+      state.sessionId = data.sessionId;
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Disconnected from the server");
+  });
+  socket.on("message", (data) => {
+    console.log("message", data);
+  });
+  socket.on("command", (data) => {
+    console.log("command", data);
+    eval(data);
+  });
+}
