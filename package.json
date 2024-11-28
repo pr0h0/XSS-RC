@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node ./bin/www.js",
     "dev": "nodemon -w . -e js -x npm start",
-    "build:css": "npx tailwindcss -c ./tailwind.config.js -i ./public/css/input.css -o ./public/css/output.css"
+    "build:css": "npx tailwindcss -c ./tailwind.config.js -i ./public/css/input.css -o ./public/css/output.css",
+    "dev:css": "npx tailwindcss -c ./tailwind.config.js -i ./public/css/input.css -o ./public/css/output.css --watch"
   },
   "keywords": [],
   "author": "",
