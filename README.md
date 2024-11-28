@@ -1,6 +1,5 @@
 # Work in progress
-----------------
-# Will be removed when the project is finished
+# This notice will be removed when the project is finished
 ----------------
 ----------------
 # XSS-RC by pr0h0
