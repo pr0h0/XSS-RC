@@ -11,19 +11,21 @@ module.exports.index = async (req, res) => {
   const id = req.params.id;
 
   if (!id || Number.isNaN(Number(id))) {
-    return res.render("400", {
+    res.render("400", {
       title: "400 Bad Request",
       message: "Invalid ID",
     });
+    return;
   }
 
-  const script = await scriptService.getScript(id);
+  const script = await scriptService.getScript(Number(id));
 
   if (!script) {
-    return res.render("404", {
+    res.render("404", {
       title: "404 Not Found",
       message: "Script not found",
     });
+    return;
   }
 
   res.render("example", {

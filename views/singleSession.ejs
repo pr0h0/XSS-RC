@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('partials/head', {title:locals.title}) %>
+
+<body class="w-full h-screen flex flex-col">
+  <style>
+    #messages {
+      overflow: auto;
+      max-height: calc(100vh - 195px);
+    }
+
+    #messages form textarea::placeholder {
+      color: #666;
+    }
+  </style>
+  <div class="flex flex-row flex-1 bg-indigo-100 h-screen">
+    <%- include('partials/sidebar') %>
+    <div class="flex-1 flex bg-indigo-100">
+      <div class="flex-1 flex flex-col p-4 overflow-auto">
+        <h1 class="h-[72px] bg-white text-4xl p-4 text-center mb-4">[<%= session.id %>] [<%= session.name %> - <%= session.sessionId %>]</h1>
+        <div class="flex w-full flex-wrap gap-4 flex-1">
+          <div class="flex flex-1 basis-1/3 flex-col gap-2" id="messages">
+            <% locals.messages?.forEach(msg => { %>
+            <%- include('partials/message', {msg}) %>
+            <% }) %>
+            <% if (!locals.messages?.length) {%>
+            <div class="bg-white p-4 m-2">
+              <p>No messages yet</p>
+            </div>
+            <% } %>
+            <span id="messages-end" class="flex-1 flex"></span>
+            <form onsubmit="handleMessageFormSubmit(event)" class="flex flex-col sticky -bottom-4 px-2 py-4 bg-white border border-solid border-black">
+              <span>(async function() &lbrace;</span>
+              <div class="flex flex-row">
+                <textarea id="message" class="bg-white p-4 m-2 w-full border border-solid border-black" rows="7" data-parse-placeholder placeholder="const value = location.href;\nreturn value; <-- this will be in box above" /></textarea>
+                <input type="submit" value="Send" class="bg-blue-500 text-white p-4 m-2" />
+              </div>
+              <span>&rbrace;)()</span>
+            </form>
+          </div>
+          <div class="flex flex-1 basis-1/3 flex-col">
+            <div class="flex flex-col">
+              <div class="flex-1 bg-white p-4 m-2 flex flex-col">
+                <h2 class="text-xl">Session Info</h2>
+                <p>Id: <%= session.id %></p>
+                <p>Session ID: <%= session.sessionId %></p>
+                <p>Script ID: <%= session.scriptId %></p>
+                <p>Status: <%= session.status %></p>
+              </div>
+              <div class="flex flex-col">
+                <h2 class="text-xl">Commands</h2>
+                <div class="flex flex-row">
+                  <button class="bg-blue-500 text-white p-2 m-2">Start</button>
+                  <button class="bg-red-500 text-white p-2 m-2">Stop</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <% if (session.status === "Active") { %>
+  <script>
+    const messages = document.querySelector("#messages");
+    const msgLastChild = document.querySelector("#messages-end");
+    const socket = io();
+    const state = {
+      sessionId: "<%= session.sessionId %>",
+    };
+
+    socket.on("connect", handleConnectEvent);
+    socket.on('disconnect', handleDisconnectEvent);
+    socket.on('session:closed', handleClosedSessionEvent);
+    socket.on('result', handleResultEvent);
+
+    function handleConnectEvent() {
+      console.log("Connected to the server");
+      socket.emit("admin:join", {
+        id: state.sessionId,
+      });
+    }
+
+    function handleDisconnectEvent() {
+      console.log("Disconnected from the server");
+      if (window.confirm("You have been disconnected from the server. Do you want to reload?")) {
+        window.location.reload();
+      }
+    }
+
+    function handleMessageFormSubmit(event) {
+
+      event.preventDefault();
+      const form = event.target;
+      const message = form.message.value;
+      socket.emit("admin:command", {
+        id: state.sessionId,
+        message: {
+          type: "execute",
+          payload: message,
+        }
+      });
+      form.message.value = "";
+    }
+
+    function handleClosedSessionEvent() {
+      alert("Client session has been closed");
+    }
+
+    function handleResultEvent(data) {
+      const el = new DOMParser().parseFromString(data, "text/html").body.firstChild;
+      messages.insertBefore(el, msgLastChild);
+      setTimeout(() => document.querySelector('#messages')?.scrollTo(0, 1e6), 100);
+    }
+  </script>
+  <% } %>
+  <%- include('partials/footer') %>
+  <script>
+    document.querySelectorAll("[data-parse-placeholder]").forEach(el => {
+      el.placeholder = el.getAttribute("placeholder").replaceAll("\\n", "\n");
+    })
+
+    document.querySelector('#messages')?.scrollTo(0, 1e6);
+  </script>
+</body>
+
+</html>

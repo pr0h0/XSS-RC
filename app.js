@@ -16,8 +16,14 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(cookieParser(process.env.AUTH_PASSWORD));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(morgan("dev"));
+
+if (process.env.NODE_ENV === "development") {
+  app.use(morgan("dev"));
+}
 
 app.use(require("./routes"));
+
+// set all previous sessions to closed if some are marked as open
+require("./services/sessionsService").closeAllSessions();
 
 module.exports = app;

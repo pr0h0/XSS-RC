@@ -16,10 +16,9 @@ const weights = {
 const routers = getFilesInDir(__dirname)
   .filter((file) => file !== "index.js")
   .sort((a, b) => (weights[a] ?? 10) - (weights[b] ?? 10))
-  .map(
-    (file) =>
-      logService.log(`${file.replace(/\.js$/, "")} initializing`) ||
-      require(`./${file}`),
-  );
+  .map((file) => {
+    logService.debug(`${file.replace(/\.js$/, "")} initializing`);
+    return require(`./${file}`);
+  });
 
 module.exports = routers;

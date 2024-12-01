@@ -1,22 +1,9 @@
 "use strict";
 
-const fs = require("fs");
-const path = require("path");
 const Sequelize = require("sequelize");
 const process = require("process");
-const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || "development";
 const config = require(__dirname + "/../config/config.json")[env];
-
-/**
- * @type {{
- *  sequelize: Sequelize.Sequelize,
- *  Sequelize: Sequelize,
- *  scripts: typeof import('sequelize').Model;
- *  session: typeof import('sequelize').Model;
- * }}
- */
-const db = {};
 
 let sequelize;
 if (config.use_env_variable) {
@@ -30,30 +17,20 @@ if (config.use_env_variable) {
   );
 }
 
-fs.readdirSync(__dirname)
-  .filter((file) => {
-    return (
-      file.indexOf(".") !== 0 &&
-      file !== basename &&
-      file.slice(-3) === ".js" &&
-      file.indexOf(".test.js") === -1
-    );
-  })
-  .forEach((file) => {
-    const model = require(path.join(__dirname, file))(
-      sequelize,
-      Sequelize.DataTypes,
-    );
-    db[model.name] = model;
+const db = {
+  history: require("./history")(sequelize, Sequelize.DataTypes),
+  scripts: require("./scripts")(sequelize, Sequelize.DataTypes),
+  session: require("./session")(sequelize, Sequelize.DataTypes),
+  sequelize,
+  Sequelize,
+};
+
+Object.keys(db)
+  .filter((key) => key.toLowerCase() !== "sequelize")
+  .forEach((modelName) => {
+    if (db[modelName].associate) {
+      db[modelName].associate(db);
+    }
   });
-
-Object.keys(db).forEach((modelName) => {
-  if (db[modelName].associate) {
-    db[modelName].associate(db);
-  }
-});
-
-db.sequelize = sequelize;
-db.Sequelize = Sequelize;
 
 module.exports = db;

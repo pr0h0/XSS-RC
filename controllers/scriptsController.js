@@ -1,5 +1,6 @@
 const logService = require("../services/logService");
 const scriptsService = require("../services/scriptsService");
+const sessionsService = require("../services/sessionsService");
 module.exports = {};
 
 /**
@@ -41,10 +42,11 @@ module.exports.postNew = async (req, res) => {
     logService.error(e.message);
     logService.error(e.stack);
 
-    return res.render("400", {
+    res.render("400", {
       title: "Bad Request",
       message: e.message ?? "Error creating script",
     });
+    return;
   }
 
   res.redirect("/scripts");
@@ -62,15 +64,17 @@ module.exports.deleteScript = async (req, res) => {
     if (!script) {
       throw new Error("Error deleting script");
     }
-    // TODO: Add deleting of all associated items from other tables
+
+    await sessionsService.deleteSessions({ where: { scriptId: Number(id) } });
   } catch (e) {
     logService.error(e.message);
     logService.error(e.stack);
 
-    return res.render("400", {
+    res.render("400", {
       title: "Bad Request",
       message: e.message ?? "Error deleting script",
     });
+    return;
   }
 
   res.redirect("/scripts");
@@ -98,7 +102,7 @@ module.exports.getRawScript = async (req, res) => {
     logService.error(e.message);
     logService.error(e.stack);
 
-    return res.render("400", {
+    res.render("400", {
       title: "Bad Request",
       message: e.message ?? "Error getting script",
     });

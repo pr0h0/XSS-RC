@@ -1,10 +1,20 @@
 const { scripts } = require("../models");
 
+/**
+ * @typedef {{
+ *  id: number,
+ *  name: string,
+ *  site: string,
+ *  createdAt: string,
+ *  updatedAt: string,
+ * }} script
+ */
+
 module.exports = {};
 
 /**
  * @param {{name:string, site: string}} script
- * @returns {Promise<import('../models').scripts>}
+ * @returns {Promise<script>}
  */
 module.exports.newScript = function ({ name, site }) {
   if (!name || !site) {
@@ -14,7 +24,7 @@ module.exports.newScript = function ({ name, site }) {
 };
 
 /**
- * @returns {Promise<import('../models').scripts[]>}
+ * @returns {Promise<script[]>}
  */
 module.exports.getAllScripts = function () {
   return scripts.findAll({ order: [["createdAt", "DESC"]] });
@@ -37,7 +47,7 @@ module.exports.count = function () {
 
 /**
  * @param {number} id
- * @returns {Promise<import('../models').scripts>}
+ * @returns {Promise<script | null>}
  */
 module.exports.getScript = function (id) {
   return scripts.findOne({ where: { id } });

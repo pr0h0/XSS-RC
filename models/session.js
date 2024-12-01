@@ -12,12 +12,16 @@ module.exports = (sequelize, DataTypes) => {
       session.belongsTo(models.scripts, {
         foreignKey: "scriptId",
       });
+      session.hasMany(models.history, {
+        foreignKey: "sessionId",
+        as: "history",
+      });
     }
   }
   session.init(
     {
       name: DataTypes.STRING,
-      status: DataTypes.INTEGER,
+      status: DataTypes.STRING,
       description: DataTypes.STRING,
       time: DataTypes.STRING,
       ua: DataTypes.STRING,
@@ -30,5 +34,8 @@ module.exports = (sequelize, DataTypes) => {
       modelName: "session",
     },
   );
+
+  module.exports.model = session;
+
   return session;
 };

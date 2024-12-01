@@ -3,27 +3,66 @@
 <%- include('partials/head', {title:locals.title}) %>
 
 <body class="w-full h-screen flex flex-col">
+  <style>
+    table tbody tr:has(input:checked) {
+      background-color: #ef4444;
+
+      & td:nth-child(2) {
+        color: #fff;
+      }
+    }
+
+    table tbody tr:has(input:checked)~tr .delete-sessions {
+      background-color: #ff0000;
+    }
+  </style>
   <div class="flex flex-row flex-1 bg-indigo-100 h-screen">
     <%- include('partials/sidebar') %>
     <div class="flex-1 flex bg-indigo-100">
       <div class="flex-1 flex flex-col p-4 overflow-auto">
         <h1 class="h-[72px] bg-white text-4xl p-4 text-center mb-4">Sessions</h1>
+        <form action="/sessions" method="GET" class="w-full flex flex-wrap gap-4 items-center" onsubmit="console.log(this)">
+          <input type="number" name="id" class="flex-1 basis-32 h-12 p-2 border border-solid border-black" placeholder="ID" value="<%= search.id %>" />
+          <input type="search" name="sessionId" class="flex-1 basis-32 h-12 p-2 border border-solid border-black" placeholder="Session ID" value="<%= search.sessionId %>" />
+
+          <select name="status" class="flex-1 basis-32 h-12 p-2 border border-solid border-black w-40" value="<%= search.status %>">
+            <option>All</option>
+            <option <%= search.status === 'Active' ? 'selected' : ""%> value="Active">Active</option>
+            <option <%= search.status === 'Closed' ? 'selected' : ""%> value="Closed">Closed</option>
+          </select>
+
+          <input type="search" name="name" class="flex-1 basis-32 h-12 p-2 border border-solid border-black" placeholder="Session Name" value="<%= search.name %>" />
+          <input type="description" name="description" class="flex-1 basis-32 h-12 p-2 border border-solid border-black" placeholder="Session Description" value="<%= search.description %>" />
+
+          <div class="flex-1 basis-32 flex flex-col">
+            <input type="datetime-local" name="timeFrom" class="p-2 border border-solid border-black" placeholder="Time from" value="<%= search.timeFrom %>" />
+            <input type="datetime-local" name="timeTo" class="p-2 border border-solid border-black" placeholder="Time to" value="<%= search.timeTo %>" />
+          </div>
+
+          <input type="number" name="scriptId" class="flex-1 basis-32 h-12 p-2 border border-solid border-black" placeholder="Script ID" value="<%= search.scriptId %>" />
+        </form>
         <table class="w-full bg-white">
           <thead class="border-b border-solid border-black">
             <tr>
+              <th class="p-4 w-4 cursor-pointer" onclick="toggleSelectAll(this)">Select All</th>
               <th class="p-4 w-1/12">ID</th>
-              <th class="p-4 w-1/12">Session ID</th>
-              <th class="p-4 w-1/12">Session Status</th>
-              <th class="p-4 w-1/12">Session Name</th>
-              <th class="p-4 w-1/12">Session Description</th>
-              <th class="p-4 w-1/12">Session Time</th>
+              <th class="p-4 w-2/12">Session ID</th>
+              <th class="p-4 w-2/12">Session Status</th>
+              <th class="p-4 w-2/12">Session Name</th>
+              <th class="p-4 w-2/12">Session Description</th>
+              <th class="p-4 w-2/12">Session Time</th>
               <th class="p-4 w-1/12">Script ID</th>
             </tr>
           </thead>
           <tbody>
             <% sessions.forEach(function(session) { %>
             <tr class="border-b border-solid border-gray-400">
-              <td class="text-center"><%= session.id %></td>
+              <td class="text-center">
+                <label class="cursor-pointer w-full hover:text-white hover:bg-red-500 block p-4">
+                  <input type="checkbox" value="<%= session.id %>" class="origin-center scale-150">
+                </label>
+              </td>
+              <td class="text-blue-500 underline text-center hover:text-white hover:bg-blue-500 cursor-pointer" onclick="openSingleSession(this)" data-id="<%= session.id %>"><%= session.id %></td>
               <td class="text-center"><%= session.sessionId %></td>
               <td class="text-center <%= session.status === 'Active' ? "bg-green-500" : "bg-gray-500"%>"><%= session.status %></td>
               <td class="text-center"><%= session.name %></td>
@@ -32,13 +71,20 @@
               <td class="text-center"><%= session.scriptId %></td>
             </tr>
             <tr class="border-b border-solid border-black opacity-50">
-              <td colspan="5" class="text-center border-r border-gray-400"><%= session.ua %></td>
-              <td colspan="2" class="text-center"><%= session.ip %></td>
+              <td colspan="5" class="text-center border-r border-gray-400">UA: <%= session.ua %></td>
+              <td colspan="2" class="text-center">IP: <%= session.ip %></td>
             </tr>
             <% }) %>
             <% if (!sessions.length) { %>
             <tr>
               <td class="text-center p-4 text-xl" colspan="5">No sessions found</td>
+            </tr>
+            <% } else { %>
+            <tr class="h-16">
+              <td colspan="1" class="text-center"><button type="button" onclick="handleDeleteSessions(this)" class="delete-sessions bg-gray-500 text-white p-4">Delete</td>
+              <td colspan="3" class="text-right"><a <% if (currentPage > 1) { %> style="color:#000" href="/sessions?page=<%= prevPage %>" <% } %> class="p-4 m-4 bg-gray-300 text-gray-500 rounded-lg mx-2">Previous</a></td>
+              <td colspan="1" class="text-center"><span class="p-4 m-4 bg-blue-400 rounded-lg mx-2">Page <%= currentPage %></span></td>
+              <td colspan="3" class="text-left"><a <% if(sessions.length === 50) { %>style="color:#000" href="/sessions?page=<%= nextPage %>" <% } %> class="p-4 m-4 bg-gray-300 text-gray-500 rounded-lg mx-2">Next</a></td>
             </tr>
             <% } %>
           </tbody>
@@ -46,6 +92,51 @@
       </div>
     </div>
   </div>
+  <script>
+    function openSingleSession(el) {
+      const id = el.getAttribute('data-id');
+      window.location.href = `/sessions/${id}`;
+    }
+
+    const sessionForm = document.querySelector('form[action="/sessions"]');
+    sessionForm.querySelectorAll('input').forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          sessionForm.submit();
+        }
+      })
+    })
+
+    function toggleSelectAll(el) {
+      const checkboxes = el.closest('table').querySelectorAll('tbody tr input[type="checkbox"]');
+      const areSelected = Array.from(checkboxes).every(checkbox => checkbox.checked);
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = !areSelected;
+      })
+    }
+
+    function handleDeleteSessions(el) {
+      const checkboxes = el.closest('table').querySelectorAll('tbody tr input[type="checkbox"]');
+      const selectedIds = Array.from(checkboxes).filter(checkbox => checkbox.checked).map(checkbox => checkbox.value);
+      if (!selectedIds.length) {
+        return;
+      }
+      console.log(selectedIds);
+      if (confirm(`Are you sure you want to delete ${selectedIds.length} sessions?`)) {
+        fetch('/sessions/delete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ids: selectedIds
+          })
+        }).then(() => {
+          window.location.reload();
+        })
+      }
+    }
+  </script>
   <%- include('partials/footer') %>
 </body>
 

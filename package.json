@@ -1,12 +1,13 @@
 {
   "name": "xss-rc",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "bin/www.js",
   "scripts": {
     "start": "node ./bin/www.js",
     "dev": "nodemon -w . -e js -x npm start",
     "build:css": "npx tailwindcss -c ./tailwind.config.js -i ./public/css/input.css -o ./public/css/output.css",
-    "dev:css": "npx tailwindcss -c ./tailwind.config.js -i ./public/css/input.css -o ./public/css/output.css --watch"
+    "dev:css": "npx tailwindcss -c ./tailwind.config.js -i ./public/css/input.css -o ./public/css/output.css --watch",
+    "migrate": "npx sequelize-cli db:migrate"
   },
   "keywords": [],
   "author": "",

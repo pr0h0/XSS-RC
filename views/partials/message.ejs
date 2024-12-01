@@ -1,0 +1,26 @@
+<% 
+let bgColor = 'bg-gray-200';
+let content = msg.content;
+let response = msg.response;
+
+if(msg.type === 'connect') {
+  bgColor = 'bg-green-200';
+} else if (msg.type === 'disconnect') {
+  bgColor = 'bg-red-200';
+} else if(msg.type === 'command') {
+  bgColor = 'bg-blue-200';
+  content = JSON.parse(msg.content).payload;
+  try { response = JSON.stringify(JSON.parse(msg.response), null, 2); } catch(e) {}
+}
+%>
+
+<div class="w-full p-4 border border-solid border-black <%= bgColor %>">
+  <%= content %>
+  <span class="w-full text-right inline-block"><%= new Date(msg.createdAt).toISOString().slice(0,-1).split('T').join(' ') %></span>
+  <% if(response) {%>
+  <pre class="w-full p-4 text-wrap break-words bg-blue-400 text-black"><code><%= response %><span class="w-full text-right inline-block"><%= new Date(msg.updatedAt).toISOString().slice(0,-1).split('T').join(' ') %></span></code></pre>
+  <% } %>
+  <% if (msg.type === 'command') { %>
+  <pre class="hidden"><code><%= JSON.stringify(msg, null, 2) %></code></pre>
+  <% } %>
+</div>
