@@ -3,14 +3,27 @@
 <%- include('partials/head', {title:locals.title}) %>
 
 <body class="w-full h-screen flex flex-col">
+  <style>
+  div p+ul li a {
+    text-decoration: underline;
+    color: #3b82f6;
+  }
+  </style>
   <div class="flex flex-row flex-1 bg-indigo-100 h-screen">
     <%- include('partials/sidebar') %>
     <div class="flex-1 flex items-center justify-center bg-indigo-100">
       <div class="w-1/2 bg-white p-8 rounded-lg shadow-lg flex flex-col gap-4">
         <h1 class="text-2xl font-bold text-center">Welcome to XSS-RC by <a href="https://github.com/pr0h0" class="underline">@pr0h0</a></h1>
         <p class="text-center">Post-Exploitation XSS tool to gather informations and escalate it further</p>
+        <ul class="m-auto">
+          <li>1. Create <a href="/scripts">script</a></li>
+          <li>2. Inject script to target website</li>
+          <li>3. Or view example page to test the tool</li>
+          <li>4. Check <a href="/sessions">sessions</a> for active <a href="/sessions?status=Active">session</a></li>
+          <li>5. Play around with active session</li>
+        </ul>
         <div class="flex justify-center mt-4">
-          <a class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded" href="/dashboard">Dashboard</a>
+          <a class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded" href="/scripts">Scripts</a>
         </div>
       </div>
     </div>

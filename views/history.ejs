@@ -1,0 +1,152 @@
+<% const historyArray = locals.history %>
+<!DOCTYPE html>
+<html lang="en">
+<%- include('partials/head', {title:locals.title}) %>
+
+<body class="w-full h-screen flex flex-col">
+  <style>
+    table tbody tr:has(input:checked) {
+      background-color: #ef4444;
+
+      & td:nth-child(2),
+      & td:nth-child(3) {
+        color: #fff;
+      }
+    }
+
+    table tbody tr:has(input:checked)~tr .delete-history {
+      background-color: #ff0000;
+    }
+  </style>
+  <div class="flex flex-row flex-1 bg-indigo-100 h-screen">
+    <%- include('partials/sidebar') %>
+    <div class="flex-1 flex bg-indigo-100">
+      <div class="flex-1 flex flex-col p-4 overflow-auto">
+        <h1 class="h-[72px] bg-white text-4xl p-4 text-center mb-4">History</h1>
+        <form action="/history" method="GET" class="w-full flex flex-wrap gap-4 items-center" onsubmit="console.log(this)">
+          <input type="number" name="id" class="w-28 h-12 p-2 border border-solid border-black" placeholder="ID" value="<%= search.id %>" />
+          <input type="search" name="sessionId" class="flex-1 basis-28 h-12 p-2 border border-solid border-black" placeholder="Session ID" value="<%= search.sessionId %>" />
+
+          <select name="type" class="flex-1 basis-32 h-12 p-2 border border-solid border-black w-40" value="<%= search.type %>">
+            <option>All</option>
+            <option <%= search.type === 'Command' ? 'selected' : ""%> value="Command">Command</option>
+            <option <%= search.type === 'Connect' ? 'selected' : ""%> value="Connect">Connect</option>
+            <option <%= search.type === 'Disconnect' ? 'selected' : ""%> value="Disconnect">Disconnect</option>
+          </select>
+
+          <div class="flex-1 basis-32 flex flex-col">
+            <input type="datetime-local" name="timeFrom" class="p-2 border border-solid border-black" placeholder="Time from" value="<%= search.timeFrom %>" />
+            <input type="datetime-local" name="timeTo" class="p-2 border border-solid border-black" placeholder="Time to" value="<%= search.timeTo %>" />
+          </div>
+
+          <input type="search" name="content" class="flex-1 basis-48 h-12 p-2 border border-solid border-black" placeholder="Content" value="<%= search.content %>" />
+          <input type="search" name="response" class="flex-1 basis-48 h-12 p-2 border border-solid border-black" placeholder="Response" value="<%= search.response %>" />
+
+        </form>
+        <table class="w-full bg-white">
+          <thead class="border-b border-solid border-black">
+            <tr>
+              <th class="p-4 w-4 cursor-pointer" onclick="toggleSelectAll(this)">Select All</th>
+              <th class="p-4 w-1/12">ID</th>
+              <th class="p-4 w-2/12">Session ID</th>
+              <th class="p-4 w-2/12">Type</th>
+              <th class="p-4 w-2/12">Time</th>
+              <th class="p-4 w-2/12">Content</th>
+              <th class="p-4 w-2/12">Response</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% historyArray.forEach(function(history) { %>
+            <tr class="border-b border-solid border-gray-400 max-h-32 overflow-auto">
+              <td class="text-center">
+                <label class="cursor-pointer w-full hover:text-white hover:bg-red-500 block p-4">
+                  <input type="checkbox" value="<%= history.id %>" class="origin-center scale-150">
+                </label>
+              </td>
+              <td class="text-blue-500 underline text-center hover:text-white hover:bg-blue-500 cursor-pointer" onclick="openSingleHistoryItem(this)" data-id="<%= history.id %>" data-session-id="<%= history.sessionId %>"><%= history.id %></td>
+              <td class="text-blue-500 underline text-center"><a href="/sessions/<%= history.sessionId %>"><%= history.sessionId %></a></td>
+              <td class="text-center capitalize"><%= history.type %></td>
+              <td class="text-center"><%- history.updatedAt?.toISOString().slice(0,-5).split("T").join("<br/>") %></td>
+              <td class="text-center max-h-32 overflow-auto" <% if(history.content?.length > 100) { %> style="cursor:pointer;" data-content="<%= history.content %>" title="Click to expand" onclick="replaceContentOnClick(this)" <% } %>>
+                <%= history.content.slice(0, 100) %> <%= (history.content.length > 100 ? "..." : '') %>
+              </td>
+              <td class="text-center max-h-32 overflow-auto" <% if(history.response?.length > 100) { %> style="cursor:pointer;" data-content="<%= history.response %>" title="Click to expand" onclick="replaceContentOnClick(this)" <% } %>>
+                <%= history.response?.slice(0, 100) %> <%= (history.response?.length > 100 ? "..." : '') %>
+              </td>
+            </tr>
+            <% }) %>
+            <% if (!historyArray.length) { %>
+            <tr>
+              <td class="text-center p-4 text-xl" colspan="5">No history found</td>
+            </tr>
+            <% } else { %>
+            <tr class="h-16">
+              <td colspan="1" class="text-center"><button type="button" onclick="handleDeleteHistoryItem(this)" class="delete-history bg-gray-500 text-white p-4">Delete</td>
+              <td colspan="3" class="text-right"><a <% if (currentPage > 1) { %> style="color:#000" href="/history?page=<%= prevPage %>" <% } %> class="p-4 m-4 bg-gray-300 text-gray-500 rounded-lg mx-2">Previous</a></td>
+              <td colspan="1" class="text-center"><span class="p-4 m-4 bg-blue-400 rounded-lg mx-2">Page <%= currentPage %></span></td>
+              <td colspan="3" class="text-left"><a <% if(history.length === 50) { %>style="color:#000" href="/history?page=<%= nextPage %>" <% } %> class="p-4 m-4 bg-gray-300 text-gray-500 rounded-lg mx-2">Next</a></td>
+            </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script>
+    function openSingleHistoryItem(el) {
+      const id = el.getAttribute('data-id');
+      const sessionid = el.getAttribute('data-session-id');
+
+      window.location.href = `/sessions/${sessionid}?messageId=${id}`;
+    }
+
+    const historyForm = document.querySelector('form[action="/history"]');
+    historyForm.querySelectorAll('input').forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          historyForm.submit();
+        }
+      })
+    })
+
+    function toggleSelectAll(el) {
+      const checkboxes = el.closest('table').querySelectorAll('tbody tr input[type="checkbox"]');
+      const areSelected = Array.from(checkboxes).every(checkbox => checkbox.checked);
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = !areSelected;
+      })
+    }
+
+    function handleDeleteHistoryItem(el) {
+      const checkboxes = el.closest('table').querySelectorAll('tbody tr input[type="checkbox"]');
+      const selectedIds = Array.from(checkboxes).filter(checkbox => checkbox.checked).map(checkbox => checkbox.value);
+      if (!selectedIds.length) {
+        return;
+      }
+      console.log(selectedIds);
+      if (confirm(`Are you sure you want to delete ${selectedIds.length} history items?`)) {
+        fetch('/history/delete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ids: selectedIds
+          })
+        }).then(() => {
+          window.location.reload();
+        })
+      }
+    }
+
+    function replaceContentOnClick(el) {
+      const content = el.getAttribute('data-content');
+      el.innerText = content;
+      el.setAttribute('data-content', '');
+      el.setAttribute('onclick', '');
+    }
+  </script>
+  <%- include('partials/footer') %>
+</body>
+
+</html>

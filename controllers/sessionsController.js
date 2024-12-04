@@ -94,7 +94,10 @@ module.exports.deleteSessions = async (req, res) => {
  */
 module.exports.singleSession = async (req, res) => {
   const { id } = req.params;
-  const sessions = await sessionsService.getAll({ where: { id } });
+
+  const sessions = await sessionsService.getAll({
+    where: { [Op.or]: [{ id }, { sessionId: id }] },
+  });
   if (!sessions || sessions.length === 0) {
     res.render("404", {
       title: "Session not found",
@@ -106,6 +109,7 @@ module.exports.singleSession = async (req, res) => {
 
   const historyItems = await historyService.getAll({
     where: { sessionId: session.sessionId },
+    // no order by id desc because we add latest messages to the bottom of container
     // order: [["id", "desc"]],
   });
 

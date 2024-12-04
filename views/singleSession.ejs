@@ -122,6 +122,18 @@
     })
 
     document.querySelector('#messages')?.scrollTo(0, 1e6);
+
+    const messageId = new URLSearchParams(window.location.search).get('messageId');
+    if(messageId) {
+      const el = document.querySelector(`[data-id="${messageId}"]`)
+      if(el) {
+        el.scrollIntoView();
+        el.style.filter = "brightness(2)"
+        setTimeout(() => {
+          el.style.filter = null;
+        }, 2000);
+      }
+    }
   </script>
 </body>
 

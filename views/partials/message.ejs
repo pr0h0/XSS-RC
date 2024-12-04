@@ -14,7 +14,7 @@ if(msg.type === 'connect') {
 }
 %>
 
-<div class="w-full p-4 border border-solid border-black <%= bgColor %>">
+<div class="w-full p-4 border border-solid border-black <%= bgColor %>" data-id="<%= msg.id %>">
   <%= content %>
   <span class="w-full text-right inline-block"><%= new Date(msg.createdAt).toISOString().slice(0,-1).split('T').join(' ') %></span>
   <% if(response) {%>

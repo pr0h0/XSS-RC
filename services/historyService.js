@@ -1,3 +1,4 @@
+const { Op } = require("sequelize");
 const { history } = require("../models");
 module.exports = {};
 
@@ -44,4 +45,16 @@ module.exports.update = async (sessionId, data) => {
  */
 module.exports.getOne = async (id) => {
   return history.findOne({ where: { id } });
+};
+
+/**
+ * @param {string} type
+ * @returns {Promise<number>} count
+ */
+module.exports.count = async (type) => {
+  const where = {
+    id: { [Op.ne]: null },
+  };
+  if (type) where.type = type;
+  return history.count({ where });
 };

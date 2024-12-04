@@ -1,5 +1,6 @@
 const scriptsService = require("../services/scriptsService");
 const sessionsService = require("../services/sessionsService");
+const historyService = require("../services/historyService");
 module.exports = {};
 
 /**
@@ -9,8 +10,8 @@ module.exports = {};
 module.exports.index = async (req, res) => {
   const scriptsCount = await scriptsService.count();
   const sessionsCount = await sessionsService.count();
-  const historyCount = 999;
-  const screenshotsCount = 999;
+  const historyCount = await historyService.count("");
+  const screenshotsCount = await historyService.count("screenshoot");
 
   res.render("dashboard", {
     title: "Dashboard",
