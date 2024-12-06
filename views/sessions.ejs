@@ -121,7 +121,7 @@
       if (!selectedIds.length) {
         return;
       }
-      console.log(selectedIds);
+
       if (confirm(`Are you sure you want to delete ${selectedIds.length} sessions?`)) {
         fetch('/sessions/delete', {
           method: 'POST',

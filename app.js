@@ -21,6 +21,12 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
+app.use((req, res, next) => {
+  const hostname = "*";
+  res.setHeader("Access-Control-Allow-Origin", hostname);
+  next();
+});
+
 app.use(require("./routes"));
 
 // set all previous sessions to closed if some are marked as open

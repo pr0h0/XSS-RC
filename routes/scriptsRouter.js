@@ -12,7 +12,7 @@ router.post(
 );
 router.get(
   "/scripts/:id/script.js",
-  userAuth(true),
+  userAuth(false),
   scriptsController.getRawScript,
 );
 

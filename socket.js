@@ -9,23 +9,26 @@ const historyService = require("./services/historyService");
 module.exports = (httpServer) => {
   logService.debug("Socket.io server initialized");
   logService.debug(new Array(40).join("="));
-  const IO = io(httpServer);
+  const IO = io(httpServer, { cors: { origin: "*" } });
   IO.on("connection", (socket) => {
     const state = {};
     logService.info("User connected");
 
-    socket.on("disconnect", () => {
+    socket.on("disconnect", async () => {
       logService.info("User disconnected", state);
 
       if (state.type === "client") {
-        if (state.sessionId) {
-          sessionsService.update(state.sessionId, { status: "Closed" });
-          historyService.create({
+        if (state.id) {
+          sessionsService.update(state.id, { status: "Closed" });
+          const item = await historyService.create({
             type: "disconnect",
             sessionId: state.sessionId,
             content: "User disconnected",
           });
-          IO.to(`admin:${state.sessionId}`).emit("session:closed");
+          IO.to(`admin:${state.sessionId}`).emit(
+            "result",
+            renderResultItem(item),
+          );
         }
       } else if (state.type === "admin") {
         logService.info("Admin disconnected");
@@ -63,20 +66,32 @@ module.exports = (httpServer) => {
         });
       }
 
-      historyService.create({
+      state.id = existingSession.id;
+
+      const item = await historyService.create({
         type: "connect",
         sessionId: state.sessionId,
         content: "User connected",
       });
 
-      socket.emit("session", { sessionId: state.sessionId });
       socket.join("client:" + state.sessionId);
+      socket.emit("session", { sessionId: state.sessionId });
+      IO.to(`admin:${item.sessionId}`).emit("result", renderResultItem(item));
     });
 
     socket.on("result", async ({ payload: { type, payload, commandId } }) => {
       const item = await historyService.getOne(commandId);
       if (item) {
-        item.response = payload;
+        if (type === "screenshoot") {
+          const filepath = await saveImageToDisc({
+            payload,
+            id: item.id,
+            sessionId: item.sessionId,
+          });
+          item.response = filepath;
+        } else {
+          item.response = payload;
+        }
         await item.save();
         IO.to(`admin:${item.sessionId}`).emit("result", renderResultItem(item));
       }
@@ -112,4 +127,22 @@ function renderResultItem(item) {
   return ejs.render(messageContent, {
     msg: item,
   });
+}
+
+function saveImageToDisc({ payload, id, sessionId }) {
+  const publicPath = path.join("public", "screenshots");
+  if (!fs.existsSync(publicPath)) {
+    fs.mkdirSync(publicPath);
+  }
+
+  const filename = path.join(
+    publicPath,
+    `${sessionId}_${id}_${Date.now()}.png`,
+  );
+
+  fs.writeFileSync(filename, payload.split(";base64,").pop(), {
+    encoding: "base64",
+  });
+
+  return filename.replace(/^public/, "");
 }

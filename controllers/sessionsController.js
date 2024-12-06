@@ -11,8 +11,6 @@ module.exports.index = async (req, res) => {
   const search = req.query;
   const { page = 0 } = search;
 
-  console.log({ search, page });
-
   /** @type {*} */
   const where = {
     id: { [Op.ne]: null },
