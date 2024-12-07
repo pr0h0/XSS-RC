@@ -150,7 +150,6 @@
       document.addEventListener("paste", (event) => {
         const clipboardItems = event.clipboardData?.items ?? [];
         for (const item of clipboardItems) {
-          console.log(item.type);
           if (item.type.startsWith("image/")) {
             const blob = item.getAsFile();
             if (!blob) return;
