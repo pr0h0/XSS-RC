@@ -66,7 +66,7 @@ module.exports.closeAllSessions = async () => {
   try {
     const [count] = await session.update(
       { status: "Closed" },
-      { where: { status: "Active" } },
+      { where: { status: "Active" } }
     );
     if (count > 0) {
       logService.info("All sessions closed", count, "were active");

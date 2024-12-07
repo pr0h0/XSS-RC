@@ -27,7 +27,7 @@ module.exports = (httpServer) => {
           });
           IO.to(`admin:${state.sessionId}`).emit(
             "result",
-            renderResultItem(item),
+            renderResultItem(item)
           );
         }
       } else if (state.type === "admin") {
@@ -80,15 +80,28 @@ module.exports = (httpServer) => {
     });
 
     socket.on("result", async ({ payload: { type, payload, commandId } }) => {
-      const item = await historyService.getOne(commandId);
+      let item = null;
+      if (commandId === "new") {
+        item = await historyService.create({
+          sessionId: state.sessionId,
+          type: "command",
+          content: JSON.stringify({
+            type: "execute",
+            payload: "[PASTE]IMAGE[/PASTE]",
+          }),
+        });
+      } else {
+        item = await historyService.getOne(commandId);
+      }
       if (item) {
-        if (type === "screenshoot") {
+        if (type === "screenshot") {
           const filepath = await saveImageToDisc({
             payload,
             id: item.id,
             sessionId: item.sessionId,
           });
           item.response = filepath;
+          item.type = "screenshot";
         } else {
           item.response = payload;
         }
@@ -120,7 +133,7 @@ function renderResultItem(item) {
     __dirname,
     "views",
     "partials",
-    "message.ejs",
+    "message.ejs"
   );
   const messageContent = fs.readFileSync(messagePartialPath, "utf8");
 
@@ -137,7 +150,7 @@ function saveImageToDisc({ payload, id, sessionId }) {
 
   const filename = path.join(
     publicPath,
-    `${sessionId}_${id}_${Date.now()}.png`,
+    `${sessionId}_${id}_${Date.now()}.png`
   );
 
   fs.writeFileSync(filename, payload.split(";base64,").pop(), {

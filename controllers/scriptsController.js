@@ -94,6 +94,7 @@ module.exports.getRawScript = async (req, res) => {
     }
 
     res.header("Content-Type", "text/javascript");
+    res.setHeader("Access-Control-Allow-Origin", "*");
     res.render("script", {
       title: script.name,
       script,

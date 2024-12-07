@@ -3,22 +3,25 @@ let bgColor = 'bg-gray-200';
 let content = msg.content;
 let response = msg.response;
 let type = '';
+let jsonContent = {};
 
 if(msg.type === 'connect') {
   bgColor = 'bg-green-200';
 } else if (msg.type === 'disconnect') {
   bgColor = 'bg-red-200';
-} else if(msg.type === 'command') {
+} else if (msg.type === 'command') {
   bgColor = 'bg-blue-200';
   jsonContent = JSON.parse(msg.content)
   content = jsonContent.payload;
   type = jsonContent.type;
 
-  if(type === 'take-screenshoot') {
-    response = `<img class="cursor-pointer" src="${msg.response}" alt="screenshoot-${msg.id}" onclick="window.open(this.src)" />`;
-  } else {
-    try { response = JSON.stringify(JSON.parse(msg.response), null, 2); } catch(e) {}
-  }
+  try { response = JSON.stringify(JSON.parse(msg.response), null, 2); } catch(e) {}
+} else if (msg.type === 'screenshot') {
+  response = `<img class="cursor-pointer" src="${msg.response}" alt="screenshot-${msg.id}" onclick="window.open(this.src)" />`;
+  bgColor = 'bg-blue-200';
+  jsonContent = JSON.parse(msg.content)
+  content = jsonContent.payload;
+  type = msg.type;
 }
 %>
 
@@ -26,7 +29,7 @@ if(msg.type === 'connect') {
   <%= content %>
   <% if (msg.type === 'command') { %>
   <pre class="hidden"><code><%= JSON.stringify(msg, null, 2) %></code></pre>
-  <% if(type !== 'take-screenshoot') { %>
+  <% if(type !== 'screenshot') { %>
   <div class="w-full flex items-center my-4 gap-4">
     <button class="p-2 bg-green-300" onclick="copyCommand(this)">Copy</button>
     <button class="p-2 bg-blue-300" onclick="resendCommand(this)">Resend</button>
@@ -35,6 +38,6 @@ if(msg.type === 'connect') {
   <% } %>
   <% } %>
   <%_ if(response && response !== 'null') { _%>
-  <pre class="w-full p-4 text-wrap break-words bg-blue-400 text-black" data-content="<% response %>"><code class="w-full" style="word-break: break-word;"><% if(type === 'take-screenshoot') { %> <%- response %> <%} else {%> <%= response _%><% } %><div style="word-break: keep-all;" class="w-full flex items-center my-4 gap-4 sticky bottom-0 bg-blue-400"><button class="p-2 bg-green-300" onclick="copyCommand(this)">Copy</button><span class="w-full text-right inline-block"><%= new Date(msg.updatedAt).toISOString().slice(0,-1).split('T').join(' ') %> UTC-0</span></div></code></pre>
+  <pre class="w-full p-4 text-wrap break-words bg-blue-400 text-black" data-content="<%= response %>"><code class="w-full" style="word-break: break-word;"><% if(type === 'screenshot') { %> <%- response %> <%} else {%> <%= response _%><% } %><div style="word-break: keep-all;" class="w-full flex items-center my-4 gap-4 sticky bottom-0 bg-blue-400"><button class="p-2 bg-green-300" onclick="copyCommand(this)">Copy</button><span class="w-full text-right inline-block"><%= new Date(msg.updatedAt).toISOString().slice(0,-1).split('T').join(' ') %> UTC-0</span></div></code></pre>
   <%_ } _%>
 </div>

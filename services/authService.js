@@ -30,7 +30,7 @@ module.exports.getFinalPassword = (password) => {
     finalPassword = salt.replaceAll("{PASSWORD}", password);
   } else {
     finalPassword = [salt, password, serverStartTime, password, salt].join(
-      randJoinChar,
+      randJoinChar
     );
   }
   return finalPassword;
@@ -55,7 +55,7 @@ let envPasswordHash = null;
 module.exports.getEnvPasswordHash = () => {
   if (envPasswordHash === null) {
     envPasswordHash = module.exports.getHash(
-      module.exports.getFinalPassword(module.exports.getPassword()),
+      module.exports.getFinalPassword(module.exports.getPassword())
     );
   }
   return envPasswordHash;

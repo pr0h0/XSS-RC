@@ -106,6 +106,7 @@
         }
       })
     })
+    sessionForm.querySelector('select')?.addEventListener('change', () => sessionForm.submit());
 
     function toggleSelectAll(el) {
       const checkboxes = el.closest('table').querySelectorAll('tbody tr input[type="checkbox"]');

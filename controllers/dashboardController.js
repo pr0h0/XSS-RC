@@ -11,7 +11,7 @@ module.exports.index = async (req, res) => {
   const scriptsCount = await scriptsService.count();
   const sessionsCount = await sessionsService.count();
   const historyCount = await historyService.count("");
-  const screenshotsCount = await historyService.count("screenshoot");
+  const screenshotsCount = await historyService.count("screenshot");
 
   res.render("dashboard", {
     title: "Dashboard",

@@ -4,7 +4,7 @@ class LogService {
     this.enabledLogs = process.env.ENABLED_LOGS?.split(",") || logLevels;
     if (!this.enabledLogs.includes("error")) {
       console.warn(
-        "We suggest you to enable error logs to get notified about errors in your application.",
+        "We suggest you to enable error logs to get notified about errors in your application."
       );
     }
   }

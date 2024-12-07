@@ -8,12 +8,12 @@ router.post("/scripts/new", userAuth(true), scriptsController.postNew);
 router.post(
   "/scripts/:id/delete",
   userAuth(true),
-  scriptsController.deleteScript,
+  scriptsController.deleteScript
 );
 router.get(
   "/scripts/:id/script.js",
   userAuth(false),
-  scriptsController.getRawScript,
+  scriptsController.getRawScript
 );
 
 module.exports = router;

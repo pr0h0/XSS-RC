@@ -8,12 +8,12 @@ router.get("/sessions/:id", userAuth(true), sessionsController.singleSession);
 router.get(
   "/sessions/find/:id",
   userAuth(true),
-  sessionsController.findNextOneOpen,
+  sessionsController.findNextOneOpen
 );
 router.post(
   "/sessions/delete",
   userAuth(true),
-  sessionsController.deleteSessions,
+  sessionsController.deleteSessions
 );
 
 module.exports = router;

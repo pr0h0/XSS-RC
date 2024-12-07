@@ -1,11 +1,3 @@
-# Work in progress
-
-# This notice will be removed when the project is finished
-
----
-
----
-
 # XSS-RC by pr0h0
 
 ### XSS post exploitation framework for penetration testers and bug bounty hunters.

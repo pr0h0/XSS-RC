@@ -32,6 +32,7 @@
             <option <%= search.type === 'Command' ? 'selected' : ""%> value="Command">Command</option>
             <option <%= search.type === 'Connect' ? 'selected' : ""%> value="Connect">Connect</option>
             <option <%= search.type === 'Disconnect' ? 'selected' : ""%> value="Disconnect">Disconnect</option>
+            <option <%= search.type === 'Screenshot' ? 'selected' : ""%> value="Screenshot">Screenshot</option>
           </select>
 
           <div class="flex-1 basis-32 flex flex-col">
@@ -108,6 +109,7 @@
         }
       })
     })
+    historyForm.querySelector('select')?.addEventListener('change', () => historyForm.submit())
 
     function toggleSelectAll(el) {
       const checkboxes = el.closest('table').querySelectorAll('tbody tr input[type="checkbox"]');

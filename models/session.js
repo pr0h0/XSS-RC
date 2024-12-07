@@ -32,7 +32,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "session",
-    },
+    }
   );
 
   module.exports.model = session;
