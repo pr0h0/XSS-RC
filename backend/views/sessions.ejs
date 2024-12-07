@@ -83,7 +83,7 @@
             <tr class="h-16">
               <td colspan="1" class="text-center"><button type="button" onclick="handleDeleteSessions(this)" class="delete-sessions bg-gray-500 text-white p-4">Delete</td>
               <td colspan="3" class="text-right"><a <% if (currentPage > 1) { %> style="color:#000" href="/sessions?page=<%= prevPage %>" <% } %> class="p-4 m-4 bg-gray-300 text-gray-500 rounded-lg mx-2">Previous</a></td>
-              <td colspan="1" class="text-center"><span class="p-4 m-4 bg-blue-400 rounded-lg mx-2">Page <%= currentPage %></span></td>
+              <td colspan="1" class="text-center"><span class="p-4 m-4 bg-blue-400 rounded-lg mx-2 whitespace-nowrap">Page <%= currentPage %></span></td>
               <td colspan="3" class="text-left"><a <% if(sessions.length === 50) { %>style="color:#000" href="/sessions?page=<%= nextPage %>" <% } %> class="p-4 m-4 bg-gray-300 text-gray-500 rounded-lg mx-2">Next</a></td>
             </tr>
             <% } %>

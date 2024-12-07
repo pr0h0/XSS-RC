@@ -19,6 +19,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
+  app.use((req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    next();
+  });
 }
 
 app.use(require("./routes"));
