@@ -20,11 +20,15 @@ app.use(bodyParser.urlencoded({ extended: false }));
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
   app.use((req, res, next) => {
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Headers", "content-type");
+    res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE");
     next();
   });
 }
 
+app.use(require("./middlewares/errorHandler"));
 app.use(require("./routes"));
 
 // set all previous sessions to closed if some are marked as open

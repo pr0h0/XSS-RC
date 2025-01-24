@@ -154,3 +154,87 @@ module.exports.findNextOneOpen = async (req, res) => {
 
   res.redirect(`/sessions/${avaliableSession[0].id}`);
 };
+
+module.exports.api = {};
+
+/**
+ *
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ */
+module.exports.api.deleteSessions = async (req, res) => {
+  const { ids } = req.body;
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    res.status(400).json({ error: "Invalid ids" });
+    return;
+  }
+
+  const count = await sessionsService.deleteSessions({
+    where: { id: { [Op.in]: ids } },
+  });
+
+  res.json({ count });
+};
+
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ */
+module.exports.api.index = async (req, res) => {
+  const query = req.query;
+  const {
+    page = 0,
+    id,
+    sessionId,
+    status,
+    name,
+    description,
+    timeFrom,
+    timeTo,
+    scriptId,
+  } = query;
+
+  /** @type {any} */
+  const where = {};
+
+  if (id) where.id = Number(id);
+  if (sessionId) where.sessionId = { [Op.like]: `%${sessionId}%` };
+  if (status && status?.toString().toLowerCase() !== "all")
+    where.status = status.toString();
+  if (name) where.name = { [Op.like]: `%${name}%` };
+  if (description) where.description = { [Op.like]: `%${description}%` };
+  if (scriptId) where.scriptId = Number(scriptId);
+  const timeConstrains = [];
+  if (timeFrom)
+    timeConstrains.push({
+      createdAt: { [Op.gte]: new Date(timeFrom.toString()) },
+    });
+  if (timeTo)
+    timeConstrains.push({
+      createdAt: { [Op.lte]: new Date(timeTo.toString()) },
+    });
+  if (timeConstrains.length) where[Op.and] = timeConstrains;
+
+  const sessions = await sessionsService.getAll({
+    where,
+    order: [["id", "desc"]],
+    limit: 50,
+    offset: Number(page) < 0 ? 0 : Number(page) * 50,
+  });
+
+  const sessionIds = sessions.map((session) => session.sessionId);
+  const history = await Promise.all(
+    sessionIds.map((id) =>
+      historyService.getAll({
+        where: { sessionId: id },
+        order: [["id", "desc"]],
+        limit: 50,
+      })
+    )
+  );
+
+  res.json({
+    sessions,
+    history: history.flat(),
+  });
+};

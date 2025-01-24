@@ -35,3 +35,11 @@ module.exports.getLogout = function (req, res) {
   res.clearCookie("auth");
   res.status(301).redirect("/login");
 };
+
+/**
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+module.exports.getCheck = function (req, res) {
+  res.status(200).end();
+};

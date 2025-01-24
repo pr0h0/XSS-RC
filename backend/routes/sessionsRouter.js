@@ -16,4 +16,7 @@ router.post(
   sessionsController.deleteSessions
 );
 
+router.delete('/api/sessions/delete', userAuth(true), sessionsController.api.deleteSessions);
+router.get('/api/sessions', userAuth(true), sessionsController.api.index);
+
 module.exports = router;

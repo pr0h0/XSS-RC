@@ -109,3 +109,55 @@ module.exports.getRawScript = async (req, res) => {
     });
   }
 };
+
+module.exports.api = {};
+
+/**
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+module.exports.api.GetAllScripts = async (req, res) => {
+  try {
+    const scripts = await scriptsService.getAllScripts();
+    res.json(scripts);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+/**
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+module.exports.api.PostNewScript = async (req, res) => {
+  try {
+    const { site, name } = req.body;
+    if (!site?.toString().trim() || !name?.toString().trim()) {
+      throw new Error("Invalid site or name");
+    }
+    const script = await scriptsService.newScript({ site, name });
+    res.json(script);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+/**
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+module.exports.api.DeleteScript = async (req, res) => {
+  try {
+    const id = req.params.id;
+    if (isNaN(Number(id)) || Number(id) < 0) {
+      throw new Error("Invalid id");
+    }
+    const deleteCount = await scriptsService.deleteScript(Number(id));
+    if (!deleteCount) {
+      throw new Error("Error deleting script");
+    }
+    module.exports.api.GetAllScripts(req, res);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+};

@@ -16,4 +16,9 @@ router.get(
   scriptsController.getRawScript
 );
 
+router.get('/api/scripts', scriptsController.api.GetAllScripts);
+router.post('/api/scripts', scriptsController.api.PostNewScript);
+router.delete('/api/scripts/:id', scriptsController.api.DeleteScript);
+
+
 module.exports = router;

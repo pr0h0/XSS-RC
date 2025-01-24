@@ -24,10 +24,11 @@ module.exports.newScript = function ({ name, site }) {
 };
 
 /**
+ * @param {import("sequelize").WhereOptions?} options
  * @returns {Promise<script[]>}
  */
-module.exports.getAllScripts = function () {
-  return scripts.findAll({ order: [["createdAt", "DESC"]] });
+module.exports.getAllScripts = function (options = {}) {
+  return scripts.findAll({ ...options, order: [["createdAt", "DESC"]] });
 };
 
 /**

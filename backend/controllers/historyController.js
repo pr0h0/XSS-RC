@@ -81,3 +81,19 @@ module.exports.index = async (req, res) => {
     history,
   });
 };
+
+module.exports.api = {};
+
+/**
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+module.exports.api.delete = async (req, res) => {
+  const { ids } = req.body;
+  if (!ids || !ids.length) {
+    return res.status(400).json({ message: "No ids provided" });
+  }
+
+  const deleted = await historyService.delete(ids);
+  res.json({ deleted });
+};

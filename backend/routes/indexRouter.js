@@ -4,6 +4,7 @@ const indexController = require("../controllers/indexController");
 const userAuth = require("../middlewares/userAuth");
 
 router.get("/", userAuth(true), indexController.index);
+router.get('/api/initialData',  userAuth(true), indexController.api.initialData);
 router.all("*", userAuth(false), indexController["404"]);
 
 module.exports = router;

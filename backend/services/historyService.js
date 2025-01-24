@@ -58,3 +58,11 @@ module.exports.count = async (type) => {
   if (type) where.type = type;
   return history.count({ where });
 };
+
+/**
+ * @param {number[]} ids
+ * @returns {Promise<number>}
+ */
+module.exports.delete = async (ids) => {
+  return history.destroy({ where: { id: ids } });
+};

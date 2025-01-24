@@ -1,3 +1,50 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+*:has(> :where(.loadingAnimation)) {
+  transform-origin: center;
+  animation: rotateContainer 3.5s linear both infinite normal;
+}
+
+.loadingAnimation {
+  animation: loading 3s ease-in-out both infinite alternate;
+}
+
+@keyframes loading {
+  from {
+    transform: scale(0.75);
+  }
+  to {
+    transform: scale(1.5);
+  }
+}
+
+@keyframes rotateContainer {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(3600deg);
+  }
+}
+
+#sidebar a.active {
+  @apply brightness-0;
+}
+
+.animation-paused {
+  animation-play-state: paused;
+}
+
+.animation-running {
+  animation-play-state: running;
+}
+
+#new-script-toggle:not(:checked) + div > form {
+  display: none;
+}
+
+#scripts-toggle:not(:checked) + h1 + table {
+  display: none;
+}
