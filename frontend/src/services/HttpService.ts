@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "";
 
 type bodyType = Record<string, string | number | boolean | number[]>;
 
@@ -11,7 +11,7 @@ export default class HttpService {
 
   public get(path: string, query: bodyType) {
     const queryString = Object.entries(query)
-      .map(([k, v]) => `${k}=${v}`)
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
       .join("&");
 
     const finalUrl = `${BASE_URL}${path}${

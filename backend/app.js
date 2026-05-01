@@ -1,4 +1,5 @@
 const path = require("path");
+const fs = require("fs");
 
 const morgan = require("morgan");
 const express = require("express");
@@ -25,6 +26,20 @@ if (process.env.NODE_ENV === "development") {
     res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE");
     next();
+  });
+}
+
+// SPA fallback: serve React app for non-API GET requests when built
+const spaIndexPath = path.join(__dirname, "public", "index.html");
+const spaEnabled = fs.existsSync(spaIndexPath);
+if (spaEnabled) {
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api/")) return next();
+    if (req.path === "/check" || req.path === "/logout") return next();
+    if (req.path.startsWith("/scripts/") && req.path.endsWith("/script.js"))
+      return next();
+    if (req.path.startsWith("/screenshots/")) return next();
+    res.sendFile(spaIndexPath);
   });
 }
 

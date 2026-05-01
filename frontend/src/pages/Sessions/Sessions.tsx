@@ -1,4 +1,4 @@
-import React, { ChangeEventHandler, useContext, useMemo } from "react";
+import React, { useContext, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import ToggleDrawer from "../../Components/ToggleDrawer/ToggleDrawer";
 import { StateContext } from "../../data/stateContext";
@@ -34,6 +34,13 @@ export default function Sessions() {
       ...Object.fromEntries(searchParams.entries()),
       [e.target.name]: e.target.value,
     });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      (e.target as HTMLInputElement).closest("form")?.requestSubmit();
+    }
   };
 
   const handleDeleteSessions = async () => {
@@ -106,12 +113,13 @@ export default function Sessions() {
   const currentPage = Number(search.page);
   const prevPage = currentPage > 1 ? currentPage - 1 : 0;
   const nextPage = currentPage + 1;
+  const isLastPage = value.sessions.length < 50;
 
-  const prevPageLink = `/history?${dataService.convertObjectToQuery({
+  const prevPageLink = `/sessions?${dataService.convertObjectToQuery({
     ...search,
     page: prevPage.toString(),
   })}`;
-  const nextPageLink = `/history?${dataService.convertObjectToQuery({
+  const nextPageLink = `/sessions?${dataService.convertObjectToQuery({
     ...search,
     page: nextPage.toString(),
   })}`;
@@ -122,7 +130,7 @@ export default function Sessions() {
       style={{ maxHeight: "calc(100vh - 72px)" }}
     >
       <div className="flex-1 flex flex-col p-4 gap-4">
-        <h1 className="h-[72px] bg-white text-4xl p-4 text-center">Scripts</h1>
+        <h1 className="h-[72px] bg-white text-4xl p-4 text-center">Sessions</h1>
 
         <ToggleDrawer id="search-sessions" title="Search Sessions" persist>
           <form
@@ -136,6 +144,7 @@ export default function Sessions() {
               placeholder="ID"
               value={search.id}
               onChange={handleValueUpdate}
+              onKeyDown={handleKeyDown}
             />
             <input
               type="search"
@@ -144,15 +153,17 @@ export default function Sessions() {
               placeholder="Session ID"
               value={search.sessionId}
               onChange={handleValueUpdate}
+              onKeyDown={handleKeyDown}
             />
 
             <select
               name="status"
               className="flex-1 basis-32 h-12 p-2 border border-solid border-black w-40"
               value={search.status}
-              onChange={
-                handleValueUpdate as unknown as ChangeEventHandler<HTMLSelectElement>
-              }
+              onChange={(e) => {
+                handleValueUpdate(e as unknown as React.ChangeEvent<HTMLInputElement>);
+                e.target.closest("form")?.requestSubmit();
+              }}
             >
               <option>All</option>
               <option value="Active">Active</option>
@@ -166,6 +177,7 @@ export default function Sessions() {
               placeholder="Session Name"
               value={search.name}
               onChange={handleValueUpdate}
+              onKeyDown={handleKeyDown}
             />
             <input
               type="description"
@@ -174,6 +186,7 @@ export default function Sessions() {
               placeholder="Session Description"
               value={search.description}
               onChange={handleValueUpdate}
+              onKeyDown={handleKeyDown}
             />
 
             <div className="flex-1 basis-32 flex flex-col">
@@ -184,6 +197,7 @@ export default function Sessions() {
                 placeholder="Time from"
                 value={search.timeFrom}
                 onChange={handleValueUpdate}
+                onKeyDown={handleKeyDown}
               />
               <input
                 type="datetime-local"
@@ -192,6 +206,7 @@ export default function Sessions() {
                 placeholder="Time to"
                 value={search.timeTo}
                 onChange={handleValueUpdate}
+                onKeyDown={handleKeyDown}
               />
             </div>
 
@@ -202,6 +217,7 @@ export default function Sessions() {
               placeholder="Script ID"
               defaultValue={search.scriptId}
               onChange={handleValueUpdate}
+              onKeyDown={handleKeyDown}
             />
             <button
               type="submit"
@@ -234,7 +250,11 @@ export default function Sessions() {
             <tbody>
               {value.sessions.map((session) => (
                 <React.Fragment key={session.id}>
-                  <tr className="border-b border-solid border-gray-400">
+                  <tr
+                    className={`border-b border-solid border-gray-400 ${
+                      selected[session.id] ? "bg-red-500 text-white" : ""
+                    }`}
+                  >
                     <td className="text-center">
                       <label className="cursor-pointer w-full hover:text-white hover:bg-red-500 block p-4">
                         <input
@@ -280,7 +300,7 @@ export default function Sessions() {
                   </tr>
                   <tr className="border-b border-solid border-black opacity-50">
                     <td
-                      colSpan={6}
+                      colSpan={5}
                       className="text-center border-r border-gray-400"
                     >
                       UA: {session.ua}
@@ -324,8 +344,12 @@ export default function Sessions() {
                       Page {currentPage}
                     </span>
                     <Link
-                      className="p-4 m-4 bg-gray-300 text-gray-500 rounded-lg mx-2"
-                      to={nextPage ? nextPageLink : "#"}
+                      className={`p-4 m-4 rounded-lg mx-2 ${
+                        isLastPage
+                          ? "bg-gray-300 text-gray-500 pointer-events-none"
+                          : "bg-gray-300 text-gray-500"
+                      }`}
+                      to={isLastPage ? "#" : nextPageLink}
                     >
                       Next
                     </Link>

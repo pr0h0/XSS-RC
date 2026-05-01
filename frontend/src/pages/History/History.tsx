@@ -1,51 +1,70 @@
-import React, { useContext, useEffect } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { StateContext } from "../../data/stateContext";
 import ToggleDrawer from "../../Components/ToggleDrawer/ToggleDrawer";
 import historyService from "../../services/HistoryService";
-import dataService from "../../services/DataService";
+import HistoryType from "../../types/history";
 
 export default function History() {
   const { value, update } = useContext(StateContext);
-  const [selected, setSelected] = React.useState<{ [id: number]: boolean }>({});
-
+  const [selected, setSelected] = useState<{ [id: number]: boolean }>({});
   const [searchParams, updateSearch] = useSearchParams();
+
   const search = {
-    id: "",
-    sessionId: "",
-    type: "All",
-    timeFrom: "",
-    timeTo: "",
-    content: "",
-    response: "",
-    page: 1,
-    ...Object.fromEntries(searchParams.entries()),
+    id: searchParams.get("id") || "",
+    sessionId: searchParams.get("sessionId") || "",
+    type: searchParams.get("type") || "All",
+    timeFrom: searchParams.get("timeFrom") || "",
+    timeTo: searchParams.get("timeTo") || "",
+    content: searchParams.get("content") || "",
+    response: searchParams.get("response") || "",
+    page: searchParams.get("page") || "1",
   };
 
   const currentPage = Number(search.page);
   const prevPage = currentPage > 1 ? currentPage - 1 : 0;
   const nextPage = currentPage + 1;
+  const isLastPage = value.history.length < 50;
 
-  const prevPageLink = `/history?${dataService.convertObjectToQuery({
-    ...search,
-    page: prevPage.toString(),
-  })}`;
-  const nextPageLink = `/history?${dataService.convertObjectToQuery({
-    ...search,
-    page: nextPage.toString(),
-  })}`;
+  const fetchHistory = useCallback(() => {
+    const params = new URLSearchParams();
+    if (search.id) params.set("id", search.id);
+    if (search.sessionId) params.set("sessionId", search.sessionId);
+    if (search.type !== "All") params.set("type", search.type);
+    if (search.timeFrom) params.set("timeFrom", search.timeFrom);
+    if (search.timeTo) params.set("timeTo", search.timeTo);
+    if (search.content) params.set("content", search.content);
+    if (search.response) params.set("response", search.response);
+    params.set("page", search.page);
+
+    historyService.getAll(params).then((data) => {
+      if (data?.history) {
+        update({ history: data.history });
+      }
+    });
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
-    const params = new URLSearchParams(
-      Object.entries(Object.fromEntries(formData.entries())).map(
-        ([key, value]) => [key, value.toString()]
-      )
-    );
-    console.log(params);
+    const params = new URLSearchParams();
+    for (const [key, value] of formData.entries()) {
+      if (value) params.set(key, value.toString());
+    }
+    params.set("page", "1");
     updateSearch(params);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      (e.target as HTMLInputElement).closest("form")?.requestSubmit();
+    }
   };
 
   const toggleSelectAll = () => {
@@ -66,8 +85,9 @@ export default function History() {
   const handleSelectToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.checked) {
       setSelected((prev) => {
-        delete prev[Number(e.target.value)];
-        return { ...prev };
+        const next = { ...prev };
+        delete next[Number(e.target.value)];
+        return next;
       });
       return;
     }
@@ -90,36 +110,14 @@ export default function History() {
     }
   };
 
-  useEffect(() => {
-    const handleEnter = (e: Event) => {
-      if ((e as KeyboardEvent).key === "Enter")
-        (e.target as HTMLElement).closest("form")?.submit();
-    };
-
-    const handleChange = (e: Event) => {
-      (e.target as HTMLElement).closest("form")?.submit();
-    };
-
-    const inpEls = document.querySelectorAll("form input");
-    const selectEls = document.querySelectorAll("form select");
-
-    inpEls.forEach((el) => {
-      el?.addEventListener("keydown", handleEnter);
-    });
-
-    selectEls.forEach((el) => {
-      el?.addEventListener("change", handleChange);
-    });
-
-    return () => {
-      inpEls.forEach((el) => {
-        el?.removeEventListener("keydown", handleEnter);
-      });
-      selectEls.forEach((el) => {
-        el?.removeEventListener("change", handleChange);
-      });
-    };
-  }, []);
+  const prevPageLink = `/history?${new URLSearchParams({
+    ...search,
+    page: prevPage.toString(),
+  }).toString()}`;
+  const nextPageLink = `/history?${new URLSearchParams({
+    ...search,
+    page: nextPage.toString(),
+  }).toString()}`;
 
   return (
     <div
@@ -133,8 +131,6 @@ export default function History() {
           </h1>
           <ToggleDrawer id="search-history" title="Search History" persist>
             <form
-              action="/history"
-              method="GET"
               className="w-full flex flex-wrap gap-4 items-center"
               onSubmit={handleSubmit}
             >
@@ -143,15 +139,17 @@ export default function History() {
                 name="id"
                 className="w-28 h-12 p-2 border border-solid border-black"
                 placeholder="ID"
-                defaultValue={search.id.toString()}
+                defaultValue={search.id}
+                onKeyDown={handleKeyDown}
               />
               <input
                 type="search"
                 name="sessionId"
                 className="flex-1 basis-28 h-12 p-2 border border-solid border-black"
                 placeholder="Session ID"
-                defaultValue={search.sessionId.toString()}
+                defaultValue={search.sessionId}
                 list="sessions-list"
+                onKeyDown={handleKeyDown}
               />
               <datalist id="sessions-list">
                 {value.sessions.map((session) => (
@@ -164,13 +162,14 @@ export default function History() {
               <select
                 name="type"
                 className="flex-1 basis-32 h-12 p-2 border border-solid border-black w-40"
-                defaultValue={search.type.toString()}
+                defaultValue={search.type}
+                onChange={(e) => e.target.closest("form")?.requestSubmit()}
               >
                 <option>All</option>
-                <option value="Command">Command</option>
-                <option value="Connect">Connect</option>
-                <option value="Disconnect">Disconnect</option>
-                <option value="Screenshot">Screenshot</option>
+                <option value="command">Command</option>
+                <option value="connect">Connect</option>
+                <option value="disconnect">Disconnect</option>
+                <option value="screenshot">Screenshot</option>
               </select>
 
               <div className="flex-1 basis-32 flex flex-col">
@@ -196,6 +195,7 @@ export default function History() {
                 className="flex-1 basis-48 h-12 p-2 border border-solid border-black"
                 placeholder="Content"
                 defaultValue={search.content}
+                onKeyDown={handleKeyDown}
               />
               <input
                 type="search"
@@ -203,6 +203,7 @@ export default function History() {
                 className="flex-1 basis-48 h-12 p-2 border border-solid border-black"
                 placeholder="Response"
                 defaultValue={search.response}
+                onKeyDown={handleKeyDown}
               />
             </form>
           </ToggleDrawer>
@@ -226,59 +227,12 @@ export default function History() {
               </thead>
               <tbody>
                 {value.history.map((history) => (
-                  <tr
-                    className="border-b border-solid border-gray-400 max-h-32 overflow-auto"
+                  <HistoryRow
                     key={history.id}
-                  >
-                    <td className="text-center">
-                      <label className="cursor-pointer w-full hover:text-white hover:bg-red-500 block p-4">
-                        <input
-                          type="checkbox"
-                          value={history.id}
-                          className="origin-center scale-150"
-                          checked={selected[history.id] ?? false}
-                          onChange={handleSelectToggle}
-                        />
-                      </label>
-                    </td>
-                    <td className="text-blue-500 underline text-center hover:text-white hover:bg-blue-500 cursor-pointer">
-                      <Link to={`/sessions/${history.sessionId}?itemId=${history.id}`}>
-                        {history.id}
-                      </Link>
-                    </td>
-                    <td className="text-blue-500 underline text-center">
-                      <Link to={`/sessions/${history.sessionId}`}>
-                        {history.sessionId}
-                      </Link>
-                    </td>
-                    <td className="text-center capitalize">{history.type}</td>
-                    <td className="text-center">
-                      {new Date(history.updatedAt)
-                        ?.toISOString()
-                        .slice(0, -5)
-                        .split("T")
-                        .map((x) => (
-                          <React.Fragment key={x}>
-                            {x}
-                            <br />
-                          </React.Fragment>
-                        ))}
-                    </td>
-                    <td
-                      className="text-center max-h-32 overflow-auto"
-                      data-x={`<% if(history.content?.length > 100) { %> style="cursor:pointer;" data-content="<%= history.content %>" title="Click to expand" onclick="replaceContentOnClick(this)" <% } %>`}
-                    >
-                      {history.content.slice(0, 100)}{" "}
-                      {history.content.length > 100 ? "..." : ""}
-                    </td>
-                    <td
-                      className="text-center max-h-32 overflow-auto"
-                      data-x={`<% if(history.response?.length > 100) { %> style="cursor:pointer;" data-content="<%= history.response %>" title="Click to expand" onclick="replaceContentOnClick(this)" <% } %>`}
-                    >
-                      {history.response?.slice(0, 100)}{" "}
-                      {history.response?.length > 100 ? "..." : ""}
-                    </td>
-                  </tr>
+                    history={history}
+                    selected={selected[history.id] ?? false}
+                    onToggle={handleSelectToggle}
+                  />
                 ))}
                 {value.history.length === 0 && (
                   <tr>
@@ -314,8 +268,12 @@ export default function History() {
                         Page {currentPage}
                       </span>
                       <Link
-                        className="p-4 m-4 bg-gray-300 text-gray-500 rounded-lg mx-2"
-                        to={nextPage ? nextPageLink : "#"}
+                        className={`p-4 m-4 rounded-lg mx-2 ${
+                          isLastPage
+                            ? "bg-gray-300 text-gray-500 pointer-events-none"
+                            : "bg-gray-300 text-gray-500"
+                        }`}
+                        to={isLastPage ? "#" : nextPageLink}
                       >
                         Next
                       </Link>
@@ -331,3 +289,84 @@ export default function History() {
     </div>
   );
 }
+
+const HistoryRow = ({
+  history,
+  selected,
+  onToggle,
+}: {
+  history: HistoryType;
+  selected: boolean;
+  onToggle: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) => {
+  const [expandedContent, setExpandedContent] = useState(false);
+  const [expandedResponse, setExpandedResponse] = useState(false);
+
+  const isLongContent = history.content?.length > 100;
+  const isLongResponse = history.response?.length > 100;
+
+  return (
+    <tr
+      className={`border-b border-solid border-gray-400 max-h-32 overflow-auto ${
+        selected ? "bg-red-500 text-white" : ""
+      }`}
+    >
+      <td className="text-center">
+        <label className="cursor-pointer w-full hover:text-white hover:bg-red-500 block p-4">
+          <input
+            type="checkbox"
+            value={history.id}
+            className="origin-center scale-150"
+            checked={selected}
+            onChange={onToggle}
+          />
+        </label>
+      </td>
+      <td className="text-blue-500 underline text-center hover:text-white hover:bg-blue-500 cursor-pointer">
+        <Link to={`/sessions/${history.sessionId}?messageId=${history.id}`}>
+          {history.id}
+        </Link>
+      </td>
+      <td className="text-blue-500 underline text-center">
+        <Link to={`/sessions/${history.sessionId}`}>{history.sessionId}</Link>
+      </td>
+      <td className="text-center capitalize">{history.type}</td>
+      <td className="text-center">
+        {new Date(history.updatedAt)
+          ?.toISOString()
+          .slice(0, -5)
+          .split("T")
+          .map((x) => (
+            <React.Fragment key={x}>
+              {x}
+              <br />
+            </React.Fragment>
+          ))}
+      </td>
+      <td
+        className={`text-center max-h-32 overflow-auto ${
+          isLongContent ? "cursor-pointer" : ""
+        }`}
+        title={isLongContent ? "Click to expand" : undefined}
+        onClick={() => isLongContent && setExpandedContent(!expandedContent)}
+      >
+        {expandedContent || !isLongContent
+          ? history.content
+          : history.content.slice(0, 100) + "..."}
+      </td>
+      <td
+        className={`text-center max-h-32 overflow-auto ${
+          isLongResponse ? "cursor-pointer" : ""
+        }`}
+        title={isLongResponse ? "Click to expand" : undefined}
+        onClick={() =>
+          isLongResponse && setExpandedResponse(!expandedResponse)
+        }
+      >
+        {expandedResponse || !isLongResponse
+          ? history.response
+          : (history.response?.slice(0, 100) ?? "") + "..."}
+      </td>
+    </tr>
+  );
+};

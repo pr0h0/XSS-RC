@@ -4,6 +4,7 @@ const historyController = require("../controllers/historyController");
 const userAuth = require("../middlewares/userAuth");
 
 router.get("/history", userAuth(true), historyController.index);
+router.get("/api/history", userAuth(true), historyController.api.index);
 router.delete(
   "/api/history/delete",
   userAuth(true),

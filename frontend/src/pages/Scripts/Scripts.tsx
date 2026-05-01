@@ -1,14 +1,20 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { StateContext } from "../../data/stateContext";
 import scriptService from "../../services/ScriptService";
 import ToggleDrawer from "../../Components/ToggleDrawer/ToggleDrawer";
 import Icon from "../../Components/Icon/Icon";
 
-/**
- * TODO: Add toggle functionality to show/hide the form and the table
- */
 export default function Scripts() {
   const { value, update } = useContext(StateContext);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+
+  const sessionCounts = value.sessions.reduce(
+    (acc, s) => {
+      acc[s.scriptId] = (acc[s.scriptId] || 0) + 1;
+      return acc;
+    },
+    {} as Record<number, number>
+  );
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -29,9 +35,12 @@ export default function Scripts() {
 
     const protocol = window.location.protocol;
     const host = window.location.host;
-    const element = `<script src="${protocol}//${host}/scripts/${id}/script.js" id="script-rc" data-script-id="${script.id}"></script>`;
+    const element = `<script src="${protocol}//${host}/scripts/${id}/script.js" type="module" id="script-rc" data-script-id="${script.id}"></script>`;
     navigator.clipboard.writeText(element);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 4000);
   };
+
   const deleteScript = async (id: number) => {
     if (!window.confirm("Are you sure you want to delete this script?")) return;
     const scripts = (await scriptService.deleteScript(id)) ?? [];
@@ -86,6 +95,7 @@ export default function Scripts() {
                 <th className="w-1/6 p-2 text-xl">ID</th>
                 <th className="w-1/6 p-2 text-xl">Name</th>
                 <th className="w-1/6 p-2 text-xl">Site</th>
+                <th className="w-1/6 p-2 text-xl">Count</th>
                 <th className="w-1/6 p-2 text-xl">Action</th>
               </tr>
             </thead>
@@ -98,10 +108,17 @@ export default function Scripts() {
                   <td className="p-2 text-base text-center">{script.id}</td>
                   <td className="p-2 text-base text-center">{script.name}</td>
                   <td className="p-2 text-base text-center">{script.site}</td>
+                  <td className="p-2 text-base text-center">
+                    {sessionCounts[script.id] ?? 0}
+                  </td>
                   <td className="p-2 text-base text-center pr-4 flex flex-row justify-center">
                     <button
                       onClick={() => copyScriptElement(script.id)}
-                      className="p-2 text-base px-4 hover:bg-green-500 hover:text-white text-green-300 text-center"
+                      className={`p-2 text-base px-4 text-center ${
+                        copiedId === script.id
+                          ? "bg-green-500 text-white"
+                          : "hover:bg-green-500 hover:text-white text-green-300"
+                      }`}
                       title="Copy script element"
                     >
                       <Icon name="copy" className="w-8 h-8" />
@@ -127,7 +144,7 @@ export default function Scripts() {
               ))}
               {value.scripts.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="w-full text-center p-4 text-xl">
+                  <td colSpan={5} className="w-full text-center p-4 text-xl">
                     No scripts created
                   </td>
                 </tr>

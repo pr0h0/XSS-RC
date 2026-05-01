@@ -1,6 +1,5 @@
 const fs = require("fs");
 const path = require("path");
-const ejs = require("ejs");
 const io = require("socket.io");
 const logService = require("./services/logService");
 const sessionsService = require("./services/sessionsService");
@@ -129,17 +128,7 @@ module.exports = (httpServer) => {
 };
 
 function renderResultItem(item) {
-  const messagePartialPath = path.join(
-    __dirname,
-    "views",
-    "partials",
-    "message.ejs"
-  );
-  const messageContent = fs.readFileSync(messagePartialPath, "utf8");
-
-  return ejs.render(messageContent, {
-    msg: item,
-  });
+  return item.get({ plain: true });
 }
 
 function saveImageToDisc({ payload, id, sessionId }) {

@@ -2,6 +2,11 @@ import { useEffect, useState } from "react";
 import { NavLink } from "react-router";
 import Icon from "../Icon/Icon";
 
+const linkClass = (isActive: boolean) =>
+  `w-full h-8 flex items-center justify-start gap-4 hover:brightness-0 ${
+    isActive ? "text-black brightness-0" : "text-blue-500"
+  }`;
+
 export default function Sidebar() {
   const [toggle, setToggle] = useState(false);
 
@@ -56,8 +61,9 @@ export default function Sidebar() {
           <li>
             <NavLink
               title="Home"
-              className="w-full h-8 flex items-center justify-start gap-4 hover:brightness-0 text-blue-500"
+              className={({ isActive }) => linkClass(isActive)}
               to="/"
+              end
             >
               <Icon name="home" className="min-w-10 w-10 h-10" />
               <span className={`${toggle ? "" : "hidden"}`}>Home</span>
@@ -66,7 +72,7 @@ export default function Sidebar() {
           <li>
             <NavLink
               title="Dashboard"
-              className="w-full h-8 flex items-center justify-start gap-4 hover:brightness-0 text-blue-500"
+              className={({ isActive }) => linkClass(isActive)}
               to="/dashboard"
             >
               <Icon name="dashboard" className="min-w-10 w-10 h-10" />
@@ -76,7 +82,7 @@ export default function Sidebar() {
           <li>
             <NavLink
               title="Sessions"
-              className="w-full h-8 flex items-center justify-start gap-4 hover:brightness-0 text-blue-500"
+              className={({ isActive }) => linkClass(isActive)}
               to="/sessions"
             >
               <Icon name="session" className="min-w-10 w-10 h-10" />
@@ -86,7 +92,7 @@ export default function Sidebar() {
           <li>
             <NavLink
               title="History"
-              className="w-full h-8 flex items-center justify-start gap-4 hover:brightness-0 text-blue-500"
+              className={({ isActive }) => linkClass(isActive)}
               to="/history"
             >
               <Icon name="history" className="min-w-10 w-10 h-10" />
@@ -96,7 +102,7 @@ export default function Sidebar() {
           <li>
             <NavLink
               title="Scripts"
-              className="w-full h-8 flex items-center justify-start gap-4 hover:brightness-0 text-blue-500"
+              className={({ isActive }) => linkClass(isActive)}
               to="/scripts"
             >
               <Icon name="script" className="min-w-10 w-10 h-10" />
@@ -106,10 +112,10 @@ export default function Sidebar() {
           <li>
             <NavLink
               title="Logout"
-              className="w-full h-8 flex items-center justify-start gap-4 hover:brightness-0 text-blue-500"
+              className={({ isActive }) => linkClass(isActive)}
               to="/logout"
             >
-             <Icon name="logout" className="min-w-10 w-10 h-10" />
+              <Icon name="logout" className="min-w-10 w-10 h-10" />
               <span className={`${toggle ? "" : "hidden"}`}>Logout</span>
             </NavLink>
           </li>

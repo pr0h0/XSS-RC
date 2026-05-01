@@ -6,17 +6,12 @@ import scriptService from "../../services/ScriptService";
 export default function Example() {
   const { value } = useContext(StateContext);
   const { id } = useParams();
-  const queryParams = useMemo(
-    () =>
-      JSON.stringify(
-        Object.fromEntries(
-          new URLSearchParams(window.location.search).entries()
-        ),
-        null,
-        2
-      ),
+
+  const queryEntries = useMemo(
+    () => Object.entries(Object.fromEntries(new URLSearchParams(window.location.search).entries())),
     []
   );
+
   const script = useMemo(
     () => value.scripts.find((script) => script.id === Number(id)),
     [id, value.scripts]
@@ -37,6 +32,7 @@ export default function Example() {
         const scriptEl = document.createElement("script");
         scriptEl.id = "script-rc";
         scriptEl.src = scriptService.getScriptUrl(script.id);
+        scriptEl.setAttribute("type", "module");
         scriptEl.async = true;
         document.body.appendChild(scriptEl);
         scriptEl.onload = () => {
@@ -70,7 +66,11 @@ export default function Example() {
             <p className="text-center">
               Reflected query (vulnerable to HTML Injection)
               <br />
-              <span dangerouslySetInnerHTML={{ __html: queryParams }}></span>
+              <span
+                dangerouslySetInnerHTML={{
+                  __html: queryEntries.map(([k, v]) => `${k},${v}`).join("<br />"),
+                }}
+              ></span>
             </p>
             <p className="text-center font-bold">Script ID: {script?.id}</p>
             <p className="text-center font-bold">Script Name: {script?.name}</p>

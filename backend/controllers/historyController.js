@@ -88,6 +88,64 @@ module.exports.api = {};
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
+module.exports.api.index = async (req, res) => {
+  const { query } = req;
+
+  const page = parseInt(query.page?.toString() ?? "0") || 1;
+  const where = {};
+
+  if (query.id && Number(query.id)) {
+    where.id = Number(query.id);
+  } else {
+    where.id = { [Op.ne]: null };
+  }
+
+  if (query.type && query.type !== "All") {
+    where.type = query.type.toString().toLowerCase();
+  }
+
+  if (query.content) {
+    where.content = { [Op.like]: `%${query.content}%` };
+  }
+
+  if (query.response) {
+    where.response = { [Op.like]: `%${query.response}%` };
+  }
+
+  if (query.sessionId) {
+    where.sessionId = query.sessionId.toString();
+  }
+
+  const timeConstrains = [];
+  if (query.timeFrom && new Date(query.timeFrom?.toString() ?? 0).getTime()) {
+    timeConstrains.push({ createdAt: { [Op.gte]: new Date(query.timeFrom.toString()) } });
+  }
+
+  if (query.timeTo && new Date(query.timeTo?.toString() ?? 0).getTime()) {
+    timeConstrains.push({ createdAt: { [Op.lte]: new Date(query.timeTo.toString()) } });
+  }
+
+  if (timeConstrains.length) {
+    where[Op.and] = timeConstrains;
+  }
+
+  const limit = 50;
+  const offset = (page - 1) * limit;
+
+  const historyItems = await historyService.getAll({
+    where,
+    limit,
+    offset,
+    order: [["id", "desc"]],
+  });
+
+  res.json({ history: historyItems });
+};
+
+/**
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 module.exports.api.delete = async (req, res) => {
   const { ids } = req.body;
   if (!ids || !ids.length) {

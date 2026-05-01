@@ -18,7 +18,10 @@ class ScriptService extends HttpService {
   }
 
   getScriptUrl(id: number) {
-    return `${this.baseUrl}/scripts/${id}/script.js`;
+    const host = window.location.hostname;
+    const port = window.location.port === "5173" ? "3000" : window.location.port;
+    const origin = port ? `${window.location.protocol}//${host}:${port}` : `${window.location.protocol}//${host}`;
+    return `${origin}/scripts/${id}/script.js`;
   }
 }
 

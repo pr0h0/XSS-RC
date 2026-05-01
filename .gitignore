@@ -1,3 +1,4 @@
 node_modules
 *.sqlite
+backend/public/screenshots/*.png
 public/screenshots/*.png
